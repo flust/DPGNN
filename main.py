@@ -1,9 +1,10 @@
 import argparse
 from logging import getLogger
 
+from config import Config
 from data.dataset import create_datasets
 from data.dataloader import construct_dataloader
-from config import Config
+from trainer import Trainer
 from utils import init_seed, init_logger, dynamic_load
 
 
@@ -15,12 +16,14 @@ def get_arguments():
     return args
 
 
-def main_process(model, config_dict=None):
+def main_process(model, config_dict=None, saved=True):
     """Main process API for experiments of VPJF
 
     Args:
-        model (str): model name
-        config_dict (dict): parameters dictionary used to modify experiment parameters
+        model (str): Model name.
+        config_dict (dict): Parameters dictionary used to modify experiment parameters.
+            Defaults to ``None``.
+        saved (bool): Whether to save the model parameters. Defaults to ``True``.
     """
 
     # configurations initialization
@@ -45,6 +48,27 @@ def main_process(model, config_dict=None):
     # model loading and initialization
     model = dynamic_load(config, 'model')(config, pool).to(config['device'])
     logger.info(model)
+
+    # trainer loading and initialization
+    trainer = Trainer(config, model)
+
+    # model training
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved,
+                                                      show_progress=config['show_progress'])
+
+    # model evaluation
+    test_result = trainer.evaluate(test_data, load_best_model=saved,
+                                   show_progress=config['show_progress'])
+
+    logger.info('best valid result: {}'.format(best_valid_result))
+    logger.info('test result: {}'.format(test_result))
+
+    return {
+        'best_valid_score': best_valid_score,
+        'best_valid_result': best_valid_result,
+        'test_result': test_result
+    }
+
 
 if __name__ == "__main__":
     args = get_arguments()

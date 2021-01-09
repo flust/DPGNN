@@ -1,14 +1,30 @@
-# Repreducibility
-seed: 2020
-reproducibility: True
-
 # Device
 use_gpu: True
 gpu_id: 0
 
-# Dataset
-dataset_path: ./dataset/
+# Training
+learner: Adam
+epochs: 300
+eval_step: 1
+stopping_step: 5
+clip_grad_norm: ~
+
+# Evaluation
+metrics: ['NDCG', 'MRR', 'MAP']
+topk: 10
+valid_metric: NDCG@10
 
 # DataLoader
 num_workers: 4
 pin_memory: True
+
+# General
+checkpoint_dir: ./saved/
+dataset_path: ./dataset/
+show_progress: True
+loss_decimal_place: 4
+metric_decimal_place: 4
+
+# Repreducibility
+seed: 2020
+reproducibility: True
