@@ -94,6 +94,6 @@ def init_logger(config):
         handlers=[fh, sh]
     )
 
-def dynamic_load(config, module_path, class_name):
+def dynamic_load(config, module_path, class_name=''):
     module = importlib.import_module(module_path)
-    return getattr(module, config['model'] + class_name)(config)
+    return getattr(module, config['model'] + class_name)

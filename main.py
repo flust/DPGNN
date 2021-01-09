@@ -32,7 +32,7 @@ def main_process(model, config_dict=None):
     logger.info(config)
 
     # data preparation
-    pool = dynamic_load(config, 'data.pool', 'Pool')
+    pool = dynamic_load(config, 'data.pool', 'Pool')(config)
     logger.info(pool)
 
     datasets = create_datasets(config, pool)
