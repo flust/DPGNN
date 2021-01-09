@@ -66,10 +66,7 @@ class Config(object):
         self.params['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
     def __getitem__(self, item):
-        if item in self.params:
-            return self.params[item]
-        else:
-            return None
+        return self.params[item] if item in self.params else None
 
     def __contains__(self, key):
         if not isinstance(key, str):
