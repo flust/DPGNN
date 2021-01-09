@@ -4,6 +4,7 @@ import re
 import yaml
 import torch
 
+
 class Config(object):
     """ Configurator module that load the defined parameters.
 
@@ -21,7 +22,7 @@ class Config(object):
             model (str): the model name.
             config_dict (dict): the external parameter dictionary, default is None.
         """
-        self.parameters = dict()
+        self.parameters = {'model': model}
         self.yaml_loader = self._build_yaml_loader()
         self.parameters.update(self._load_config_files(model))
         self.parameters.update(config_dict)
@@ -77,4 +78,3 @@ class Config(object):
 
     def __repr__(self):
         return self.__str__()
-

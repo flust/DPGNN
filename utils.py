@@ -3,8 +3,9 @@ import random
 import numpy as np
 import torch
 
+
 def init_seed(seed, reproducibility):
-    r""" init random seed for random functions in numpy, torch, cuda and cudnn
+    """ init random seed for random functions in numpy, torch, cuda and cudnn
 
     Args:
         seed (int): random seed
