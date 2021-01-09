@@ -49,7 +49,7 @@ class PJFDataset(Dataset):
         self.labels = torch.FloatTensor(self.labels)
 
     def __len__(self):
-        return len(self.pairs)
+        return self.labels.shape[0]
 
     def __getitem__(self, index):
         return self.geek_ids[index], self.job_ids[index], self.labels[index]
