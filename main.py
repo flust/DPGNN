@@ -41,6 +41,10 @@ def main_process(model, config_dict=None):
 
     train_data, valid_data, test_data = construct_dataloader(config, datasets)
 
+    # model loading and initialization
+    model = dynamic_load(config, 'model')(config, pool).to(config['device'])
+    logger.info(model)
+
 if __name__ == "__main__":
     args = get_arguments()
     main_process(model=args.model)

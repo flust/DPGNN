@@ -1,2 +1,6 @@
+# General
 train_batch_size: 4096
 eval_batch_size: 4096
+
+# Model
+embedding_size: 64
