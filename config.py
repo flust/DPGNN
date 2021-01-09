@@ -22,11 +22,28 @@ class Config(object):
             model (str): the model name.
             config_dict (dict): the external parameter dictionary, default is None.
         """
-        self.parameters = {'model': model}
-        self.yaml_loader = self._build_yaml_loader()
-        self.parameters.update(self._load_config_files(model))
-        self.parameters.update(config_dict)
+        self.params = self._load_parameters(model, config_dict)
         self._init_device()
+
+    def _load_parameters(self, model, params_from_config_dict):
+        params = {'model': model}
+        params_from_file = self._load_config_files(model)
+        for p in [params_from_file, params_from_config_dict]:
+            if p is not None:
+                params.update(p)
+        return params
+
+    def _load_config_files(self, model):
+        yaml_loader = self._build_yaml_loader()
+        file_config_dict = dict()
+        file_list = [
+            'prop/overall.yaml',
+            f'prop/{model}.yaml'
+        ]
+        for file in file_list:
+            with open(file, 'r', encoding='utf-8') as f:
+                file_config_dict.update(yaml.load(f.read(), Loader=yaml_loader))
+        return file_config_dict
 
     def _build_yaml_loader(self):
         loader = yaml.FullLoader
@@ -42,39 +59,28 @@ class Config(object):
             list(u'-+0123456789.'))
         return loader
 
-    def _load_config_files(self, model):
-        file_config_dict = dict()
-        file_list = [
-            'prop/overall.yaml',
-            f'prop/{model}.yaml'
-        ]
-        for file in file_list:
-            with open(file, 'r', encoding='utf-8') as f:
-                file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
-        return file_config_dict
-
     def _init_device(self):
-        use_gpu = self.parameters['use_gpu']
+        use_gpu = self.params['use_gpu']
         if use_gpu:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.parameters['gpu_id'])
-        self.parameters['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.params['gpu_id'])
+        self.params['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
     def __getitem__(self, item):
-        if item in self.parameters:
-            return self.parameters[item]
+        if item in self.params:
+            return self.params[item]
         else:
             return None
 
     def __contains__(self, key):
         if not isinstance(key, str):
             raise TypeError("index must be a str.")
-        return key in self.parameters
+        return key in self.params
 
     def __str__(self):
-        return '\n'.join([
-            f'{arg}={value}'
-            for arg, value in self.parameters.items()
-        ]) + '\n\n'
+        return '\n'.join(['Parameters:'] + [
+            f'\t{arg}={value}'
+            for arg, value in self.params.items()
+        ]) + '\n'
 
     def __repr__(self):
         return self.__str__()
