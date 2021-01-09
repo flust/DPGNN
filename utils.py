@@ -55,8 +55,7 @@ def init_logger(config):
     """
     LOGROOT = './log/'
     dir_name = os.path.dirname(LOGROOT)
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
+    ensure_dir(dir_name)
 
     logfilename = '{}-{}.log'.format(config['model'], get_local_time())
 
@@ -97,3 +96,12 @@ def init_logger(config):
 def dynamic_load(config, module_path, class_name=''):
     module = importlib.import_module(module_path)
     return getattr(module, config['model'] + class_name)
+
+def ensure_dir(dir_path):
+    """Make sure the directory exists, if it does not exist, create it.
+
+    Args:
+        dir_path (str): directory path
+    """
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
