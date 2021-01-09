@@ -41,7 +41,7 @@ class MF(PJFModel):
         return score
 
     def calculate_loss(self, interaction):
-        label = interaction[self.LABEL]
+        label = interaction['label']
         output = self.forward(interaction)
         return self.loss(output, label)
 
