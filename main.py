@@ -1,6 +1,7 @@
 import argparse
 from logging import getLogger
 
+from data.dataset import create_datasets
 from config import Config
 from utils import init_seed, init_logger, dynamic_load
 
@@ -32,6 +33,9 @@ def main_process(model, config_dict=None):
     # data preparation
     pool = dynamic_load(config, 'data.pool', 'Pool')
     logger.info(pool)
+    datasets = create_datasets(config, pool)
+    for ds in datasets:
+        logger.info(ds)
 
 if __name__ == "__main__":
     args = get_arguments()
