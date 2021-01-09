@@ -2,6 +2,7 @@ import os
 import random
 import logging
 import datetime
+import importlib
 
 import numpy as np
 import torch
@@ -92,3 +93,7 @@ def init_logger(config):
         level=level,
         handlers=[fh, sh]
     )
+
+def dynamic_load(config, module_path, class_name):
+    module = importlib.import_module(module_path)
+    return getattr(module, config['model'] + class_name)(config)

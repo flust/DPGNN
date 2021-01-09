@@ -2,7 +2,7 @@ import argparse
 from logging import getLogger
 
 from config import Config
-from utils import init_seed, init_logger
+from utils import init_seed, init_logger, dynamic_load
 
 
 def get_arguments():
@@ -28,6 +28,10 @@ def main_process(model, config_dict=None):
     init_logger(config)
     logger = getLogger()
     logger.info(config)
+
+    # data preparation
+    pool = dynamic_load(config, 'data.pool', 'Pool')
+    logger.info(pool)
 
 if __name__ == "__main__":
     args = get_arguments()
