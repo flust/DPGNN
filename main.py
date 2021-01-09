@@ -1,7 +1,8 @@
 import argparse
+from logging import getLogger
 
 from config import Config
-from utils import init_seed
+from utils import init_seed, init_logger
 
 
 def get_arguments():
@@ -22,6 +23,11 @@ def main_process(model, config_dict=None):
     # configurations initialization
     config = Config(model, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
+
+    # logger initialization
+    init_logger(config)
+    logger = getLogger()
+    logger.info(config)
 
 if __name__ == "__main__":
     args = get_arguments()
