@@ -42,6 +42,7 @@ class PJFPool(object):
     def __repr__(self):
         return self.__str__()
 
+
 class MFPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)

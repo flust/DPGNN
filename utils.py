@@ -27,6 +27,7 @@ def init_seed(seed, reproducibility):
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
+
 def get_local_time():
     """Get current time
 
@@ -37,6 +38,7 @@ def get_local_time():
     cur = cur.strftime('%b-%d-%Y_%H-%M-%S')
 
     return cur
+
 
 def init_logger(config):
     """
@@ -93,9 +95,11 @@ def init_logger(config):
         handlers=[fh, sh]
     )
 
+
 def dynamic_load(config, module_path, class_name=''):
     module = importlib.import_module(module_path)
     return getattr(module, config['model'] + class_name)
+
 
 def ensure_dir(dir_path):
     """Make sure the directory exists, if it does not exist, create it.

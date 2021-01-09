@@ -14,6 +14,7 @@ def get_arguments():
     args = parser.parse_args()
     return args
 
+
 def main_process(model, config_dict=None):
     """Main process API for experiments of VPJF
 

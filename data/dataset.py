@@ -66,9 +66,11 @@ class PJFDataset(Dataset):
     def __repr__(self):
         return self.__str__()
 
+
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
+
 
 def create_datasets(config, pool):
     module = importlib.import_module('data.dataset')
