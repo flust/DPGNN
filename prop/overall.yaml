@@ -8,3 +8,7 @@ gpu_id: 0
 
 # Dataset
 dataset_path: ./dataset/
+
+# DataLoader
+num_workers: 4
+pin_memory: True
