@@ -74,10 +74,10 @@ class Config(object):
         return key in self.params
 
     def __str__(self):
-        return '\n'.join(['Parameters:'] + [
-            f'\t{arg}={value}'
+        return '\n\t'.join(['Parameters:'] + [
+            f'{arg}={value}'
             for arg, value in self.params.items()
-        ]) + '\n'
+        ])
 
     def __repr__(self):
         return self.__str__()
