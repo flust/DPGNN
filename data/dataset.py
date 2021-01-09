@@ -52,7 +52,11 @@ class PJFDataset(Dataset):
         return self.labels.shape[0]
 
     def __getitem__(self, index):
-        return self.geek_ids[index], self.job_ids[index], self.labels[index]
+        return {
+            'geek_id': self.geek_ids[index],
+            'job_id': self.job_ids[index],
+            'label': self.labels[index]
+        }
 
     def __str__(self):
         return '\n\t'.join([f'{self.phase} Dataset:'] + [
