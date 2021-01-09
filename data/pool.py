@@ -1,4 +1,4 @@
-class AbstractPool(object):
+class PJFPool(object):
     def __init__(self, config):
         self.pool = {}
 
@@ -16,7 +16,7 @@ class AbstractPool(object):
     def __repr__(self):
         return self.__str__()
 
-class MFPool(AbstractPool):
+class MFPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
 
