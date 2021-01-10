@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_
 
 from model.MF import MF
 
