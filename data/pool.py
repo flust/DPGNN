@@ -58,17 +58,9 @@ class MFwBERTPool(PJFPool):
 
     def _load_bert_vec(self):
         for target in ['geek', 'job']:
-            bert_vec = np.zeros([self.pool[f'{target}_num'], self.config['embedding_size']])
-            token2id = self.pool[f'{target}_token2id']
-            filepath = os.path.join(self.config['dataset_path'], f'{target}.bert')
+            filepath = os.path.join(self.config['dataset_path'], f'{target}.bert.npy')
             self.logger.info(f'Loading {filepath}')
-            with open(filepath, 'r') as file:
-                for line in tqdm(file):
-                    token, vec = line.strip().split('\t')
-                    idx = token2id[token]
-                    vec = np.array(list(map(float, vec.split(' '))))
-                    assert vec.shape[0] == self.config['embedding_size']
-                    bert_vec[idx] = vec
+            bert_vec = np.load(filepath)
             self.pool[f'{target}_bert_vec'] = bert_vec
 
     def __str__(self):
