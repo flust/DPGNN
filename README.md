@@ -31,6 +31,14 @@ embedding_size: 64
 learning_rate: 0.001
 ```
 
+### MFwBERT
+
+```bash
+python main.py -m MFwBERT
+```
+
+*Out of Memory.*
+
 ## Result
 
 | Model | nDCG@10 | MRR@10 | MAP@10 |
