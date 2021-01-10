@@ -79,3 +79,8 @@ class PJFDataset(Dataset):
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
+
+
+class MFwBERTDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super().__init__(config, pool, phase)

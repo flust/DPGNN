@@ -1,0 +1,9 @@
+# Model
+embedding_size: 768
+
+# Training
+learning_rate: 3e-4
+
+# General
+train_batch_size: 1024
+eval_batch_size: 2048
