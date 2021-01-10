@@ -26,7 +26,7 @@ class PJFPool(object):
             self.pool[f'{target}_num'] = len(id2token)
 
     def __getitem__(self, item):
-        return self.pool[item] if item in self.pool else None
+        return self.pool[item]
 
     def __contains__(self, key):
         if not isinstance(key, str):
