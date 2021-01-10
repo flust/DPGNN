@@ -60,7 +60,7 @@ class MFwBERTPool(PJFPool):
         for target in ['geek', 'job']:
             filepath = os.path.join(self.config['dataset_path'], f'{target}.bert.npy')
             self.logger.info(f'Loading {filepath}')
-            bert_vec = np.load(filepath)
+            bert_vec = np.load(filepath).astype(np.float32)
             self.pool[f'{target}_bert_vec'] = bert_vec
 
     def __str__(self):
