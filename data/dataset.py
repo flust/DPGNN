@@ -7,6 +7,15 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from utils import dynamic_load
+
+
+def create_datasets(config, pool):
+    return [
+        dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, phase)
+        for phase in ['train', 'valid', 'test']
+    ]
+
 
 class PJFDataset(Dataset):
     def __init__(self, config, pool, phase):
@@ -70,11 +79,3 @@ class PJFDataset(Dataset):
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
-
-
-def create_datasets(config, pool):
-    module = importlib.import_module('data.dataset')
-    return [
-        getattr(module, config['model'] + 'Dataset')(config, pool, phase)
-        for phase in ['train', 'valid', 'test']
-    ]
