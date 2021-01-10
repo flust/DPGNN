@@ -27,8 +27,8 @@ python main.py -m MF
 Hyperparameters of reported result
 
 ```yaml
-embedding_size: 64
-learning_rate: 0.001
+embedding_size: 16
+learning_rate: 0.0001
 ```
 
 ### MFwBERT
@@ -37,10 +37,16 @@ learning_rate: 0.001
 python main.py -m MFwBERT
 ```
 
-*Out of Memory.*
+Hyperparameters of reported result
+
+```yaml
+embedding_size: 756
+learning_rate: 0.0003
+```
 
 ## Result
 
-| Model | nDCG@10 | MRR@10 | MAP@10 |
-| ----- | ------- | ------ | ------ |
-| MF    | 0.2035  | 0.1523 | 0.1577 |
+| Model   | nDCG@10    | MRR@10     | MAP@10     |
+| ------- | ---------- | ---------- | ---------- |
+| MF      | 0.3519     | 0.2762     | **0.2840** |
+| MFwBERT | **0.3529** | **0.2912** | 0.2795     |
