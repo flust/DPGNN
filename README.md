@@ -1,6 +1,21 @@
 # VPJF
 Codes of Person-Job Fit for Vulnerable Candidates
 
+## Dataset
+
+A dir named `dataset` should exist where `main.py` lies, containing:
+
+```
+dataset/
+├── data.train      # interaction
+├── data.test
+├── data.valid
+├── geek.token      # id tokens
+├── job.token
+├── geek.bert.npy   # pretrained bert vecs
+└── job.bert.npy
+```
+
 ## Baseline
 
 ### MF
