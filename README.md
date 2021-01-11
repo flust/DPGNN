@@ -3,17 +3,19 @@ Codes of Person-Job Fit for Vulnerable Candidates
 
 ## Dataset
 
-A dir named `dataset` should exist where `main.py` lies, containing:
+`dataset_path` in `prop/overall.yaml` should contain the following files:
 
 ```
-dataset/
+dataset_path/
 ├── data.train      # interaction
 ├── data.test
 ├── data.valid
 ├── geek.token      # id tokens
 ├── job.token
 ├── geek.bert.npy   # pretrained bert vecs
-└── job.bert.npy
+├── job.bert.npy
+├── geek.longsent   # text files after word splitting
+└── job.longsent
 ```
 
 ## Baseline
