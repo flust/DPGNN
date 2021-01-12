@@ -52,30 +52,7 @@ class Evaluator:
         scores, labels = self._flatten_cls_list(uid2topk)
         result = {}
         result['auc'] = roc_auc_score(labels, scores)
-        TP, FN, FP, TN = self._calcu_classification(labels, scores)
-        tot = scores.shape[0]
-        result['acc'] = (TP + TN) / tot
-        try: recall = TP / (TP + FN)
-        except: recall = -1
-        try: precision = TP / (TP + FP)
-        except: precision = -1
-        try: f1score = 2 * precision * recall / (precision + recall)
-        except: f1score = -1
-        result['recall'] = recall
-        result['precision'] = precision
-        result['f1score'] = f1score
         return result
-
-    def _calcu_classification(self, ans, pre):
-        TP = FN = FP = TN = 0
-        for i in range(ans.shape[0]):
-            if int(ans[i]) == 1:
-                if pre[i] >= 0.5: TP += 1
-                else: FN += 1
-            else:
-                if pre[i] >= 0.5: FP += 1
-                else: TN += 1
-        return TP, FN, FP, TN
 
     def _calcu_nDCG(self, uid2topk, k):
         tot = 0
