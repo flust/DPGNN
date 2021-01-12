@@ -69,8 +69,3 @@ class MFwBERTPool(PJFPool):
             f'geek_bert_vec: {self.pool["geek_bert_vec"].shape}',
             f'job_bert_vec: {self.pool["job_bert_vec"].shape}'
         ])
-
-
-class BERTPool(MFwBERTPool):
-    def __init__(self, config):
-        super().__init__(config)
