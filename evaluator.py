@@ -1,21 +1,21 @@
 import numpy as np
+from sklearn.metrics import roc_auc_score
 
 
 class Evaluator:
     def __init__(self, config):
-        self.metric2func = {
+        self.ranking_metric2func = {
             'ndcg': self._calcu_nDCG,
             'mrr': self._calcu_MRR,
             'map': self._calcu_MAP,
-
         }
-        self.metrics = [_.lower() for _ in config['metrics']]
         self.topk = config['topk']
+        self.maxtopk = max(self.topk)
         self.precision = config['metric_decimal_place']
 
         self.base = []
         self.idcg = []
-        for i in range(self.topk):
+        for i in range(self.maxtopk):
             self.base.append(np.log(2) / np.log(i + 2))
             if i > 0:
                 self.idcg.append(self.base[i] + self.idcg[i - 1])
@@ -30,42 +30,80 @@ class Evaluator:
             if uid not in uid2topk:
                 uid2topk[uid] = []
             uid2topk[uid].append((scores[i], labels[i]))
-        return self._sort_cut_uid2topk(uid2topk)
+        return uid2topk
 
-    def evaluate(self, uid2topk_list, eval_data):
+    def evaluate(self, uid2topk_list):
         uid2topk = self._merge_uid2topk(uid2topk_list)
         result = {}
-        for m in self.metrics:
-            result[f'{m}@{self.topk}'] = round(self.metric2func[m](uid2topk), self.precision)
+        result.update(self._calcu_ranking_metrics(uid2topk))
+        result.update(self._calcu_cls_metrics(uid2topk))
+        for m in result:
+            result[m] = round(result[m], self.precision)
         return result
 
-    def _calcu_nDCG(self, uid2topk):
+    def _calcu_ranking_metrics(self, uid2topk):
+        result = {}
+        for m in ['ndcg', 'mrr', 'map']:
+            for k in self.topk:
+                result[f'{m}@{k}'] = self.ranking_metric2func[m](uid2topk, k)
+        return result
+
+    def _calcu_cls_metrics(self, uid2topk):
+        scores, labels = self._flatten_cls_list(uid2topk)
+        result = {}
+        result['auc'] = roc_auc_score(labels, scores)
+        TP, FN, FP, TN = self._calcu_classification(labels, scores)
+        tot = scores.shape[0]
+        result['acc'] = (TP + TN) / tot
+        try: recall = TP / (TP + FN)
+        except: recall = -1
+        try: precision = TP / (TP + FP)
+        except: precision = -1
+        try: f1score = 2 * precision * recall / (precision + recall)
+        except: f1score = -1
+        result['recall'] = recall
+        result['precision'] = precision
+        result['f1score'] = f1score
+        return result
+
+    def _calcu_classification(self, ans, pre):
+        TP = FN = FP = TN = 0
+        for i in range(ans.shape[0]):
+            if int(ans[i]) == 1:
+                if pre[i] >= 0.5: TP += 1
+                else: FN += 1
+            else:
+                if pre[i] >= 0.5: FP += 1
+                else: TN += 1
+        return TP, FN, FP, TN
+
+    def _calcu_nDCG(self, uid2topk, k):
         tot = 0
         for uid in uid2topk:
             dcg = 0
             pos = 0
-            for i, (score, lb) in enumerate(uid2topk[uid]):
+            for i, (score, lb) in enumerate(uid2topk[uid][:k]):
                 dcg += lb * self.base[i]
                 pos += lb
             tot += dcg / self.idcg[int(pos) - 1]
         return tot / len(uid2topk)
 
-    def _calcu_MRR(self, uid2topk):
+    def _calcu_MRR(self, uid2topk, k):
         tot = 0
         for uid in uid2topk:
-            for i, (score, lb) in enumerate(uid2topk[uid]):
+            for i, (score, lb) in enumerate(uid2topk[uid][:k]):
                 if lb == 1:
                     tot += 1 / (i + 1)
                     break
         return tot / len(uid2topk)
 
-    def _calcu_MAP(self, uid2topk):
+    def _calcu_MAP(self, uid2topk, k):
         tot = 0
         for uid in uid2topk:
             tp = 0
             pos = 0
             ap = 0
-            for i, (score, lb) in enumerate(uid2topk[uid]):
+            for i, (score, lb) in enumerate(uid2topk[uid][:k]):
                 if lb == 1:
                     tp += 1
                     pos += 1
@@ -81,10 +119,21 @@ class Evaluator:
                 if uid not in uid2topk:
                     uid2topk[uid] = []
                 uid2topk[uid].extend(single_uid2topk[uid])
-        return self._sort_cut_uid2topk(uid2topk)
+        return self._sort_uid2topk(uid2topk)
 
-    def _sort_cut_uid2topk(self, uid2topk):
+    def _sort_uid2topk(self, uid2topk):
         for uid in uid2topk:
             uid2topk[uid].sort(key=lambda t: t[0], reverse=True)
-            uid2topk[uid] = uid2topk[uid][:self.topk]
         return uid2topk
+
+    def _flatten_cls_list(self, uid2topk):
+        scores = []
+        labels = []
+        for uid, lst in uid2topk.items():
+            score_list, lb_list = zip(*lst)
+            scores.append(np.array(score_list))
+            labels.append(np.array(lb_list))
+        scores = np.concatenate(scores)
+        labels = np.concatenate(labels)
+        assert scores.shape[0] == labels.shape[0]
+        return scores, labels

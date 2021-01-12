@@ -321,6 +321,6 @@ class Trainer(object):
 
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        result = self.evaluator.evaluate(batch_matrix_list)
 
         return result
