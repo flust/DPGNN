@@ -11,7 +11,7 @@ clip_grad_norm: ~
 
 # Evaluation
 topk: [1, 5, 10]
-valid_metric: F1Score
+valid_metric: AUC
 
 # DataLoader
 num_workers: 4
