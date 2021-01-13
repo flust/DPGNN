@@ -20,7 +20,7 @@ class MF(PJFModel):
         self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCEWithLogitsLoss()
+        self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
 
         # parameters initialization
         self.apply(self._init_weights)

@@ -35,12 +35,13 @@ class BPJFNN(PJFModel):
         )
 
         self.mlp = MLPLayers(
-            layers=[self.hd_size * 3 * 2, 1],
-            dropout=self.dropout
+            layers=[self.hd_size * 3 * 2, self.hd_size, 1],
+            dropout=self.dropout,
+            activation='tanh'
         )
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCEWithLogitsLoss()
+        self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
 
         # parameters initialization
         self.apply(self._init_weights)
