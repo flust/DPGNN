@@ -93,11 +93,10 @@ class BPJFNNDataset(PJFDataset):
 
     def __getitem__(self, index):
         geek_id = self.geek_ids[index]
-        geek_longsent = self.geek_id2longsent[geek_id]
         job_id = self.job_ids[index]
-        job_longsent = self.job_id2longsent[job_id]
         return {
-            'geek_longsent': geek_longsent,
-            'job_longsent': job_longsent,
+            'geek_id': geek_id,
+            'geek_longsent': self.geek_id2longsent[geek_id],
+            'job_longsent': self.job_id2longsent[job_id],
             'label': self.labels[index]
         }
