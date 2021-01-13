@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import log_loss
 
 
 class Evaluator:
@@ -52,6 +53,7 @@ class Evaluator:
         scores, labels = self._flatten_cls_list(uid2topk)
         result = {}
         result['auc'] = roc_auc_score(labels, scores)
+        result['logloss'] = log_loss(labels, scores)
         return result
 
     def _calcu_nDCG(self, uid2topk, k):
