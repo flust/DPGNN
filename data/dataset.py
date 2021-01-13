@@ -84,3 +84,20 @@ class MFDataset(PJFDataset):
 class MFwBERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
+
+class BPJFNNDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super().__init__(config, pool, phase)
+        self.geek_id2longsent = pool.geek_id2longsent
+        self.job_id2longsent = pool.job_id2longsent
+
+    def __getitem__(self, index):
+        geek_id = self.geek_ids[index]
+        geek_longsent = self.geek_id2longsent[geek_id]
+        job_id = self.job_ids[index]
+        job_longsent = self.job_id2longsent[job_id]
+        return {
+            'geek_longsent': geek_longsent,
+            'job_longsent': job_longsent,
+            'label': self.labels[index]
+        }

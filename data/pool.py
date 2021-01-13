@@ -3,6 +3,8 @@ from logging import getLogger
 
 from tqdm import tqdm
 import numpy as np
+import torch
+import torch.nn.functional as F
 
 
 class PJFPool(object):
@@ -10,7 +12,6 @@ class PJFPool(object):
         self.logger = getLogger()
         self.config = config
 
-        self.pool = {}
         self._load_ids()
 
     def _load_ids(self):
@@ -60,4 +61,52 @@ class MFwBERTPool(PJFPool):
             super().__str__(),
             f'geek_bert_vec: {self.geek_bert_vec.shape}',
             f'job_bert_vec: {self.job_bert_vec.shape}'
+        ])
+
+class BPJFNNPool(PJFPool):
+    def __init__(self, config):
+        super().__init__(config)
+        self._load_word_cnt()
+        self._load_longsent()
+
+    def _load_word_cnt(self):
+        min_word_cnt = self.config['min_word_cnt']
+        self.wd2id = {
+            '[WD_PAD]': 0,
+            '[WD_MISS]': 1
+        }
+        self.id2wd = ['[WD_PAD]', '[WD_MISS]']
+        filepath = os.path.join(self.config['dataset_path'], 'word.cnt')
+        self.logger.info(f'Loading {filepath}')
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for i, line in tqdm(enumerate(file)):
+                wd, cnt = line.strip().split('\t')
+                if int(cnt) < min_word_cnt:
+                    break
+                self.wd2id[wd] = i + 2
+                self.id2wd.append(wd)
+        self.wd_num = len(self.id2wd)
+
+    def _load_longsent(self):
+        for target in ['geek', 'job']:
+            max_sent_len = self.config[f'{target}_longsent_len']
+            id2longsent = torch.zeros([getattr(self, f'{target}_num'), max_sent_len], dtype=torch.int64)
+            filepath = os.path.join(self.config['dataset_path'], f'{target}.longsent')
+            token2id = getattr(self, f'{target}_token2id')
+            self.logger.info(f'Loading {filepath}')
+            with open(filepath, 'r', encoding='utf-8') as file:
+                for line in tqdm(file):
+                    token, longsent = line.strip().split('\t')
+                    idx = token2id[token]
+                    longsent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in longsent.split(' ')])
+                    longsent = F.pad(longsent, (0, max_sent_len - longsent.shape[0]))
+                    id2longsent[idx] = longsent
+            setattr(self, f'{target}_id2longsent', id2longsent)
+
+    def __str__(self):
+        return '\n\t'.join([
+            super().__str__(),
+            f'wd_num: {self.wd_num}',
+            f'geek_id2longsent: {self.geek_id2longsent.shape}',
+            f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
