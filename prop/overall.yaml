@@ -8,6 +8,7 @@ epochs: 300
 eval_step: 1
 stopping_step: 5
 clip_grad_norm: ~
+pos_weight: 5.9721
 
 # Evaluation
 topk: [1, 5, 10]
