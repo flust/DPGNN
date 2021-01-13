@@ -11,12 +11,12 @@ class MFwBERT(MF):
 
         # define layers and loss
         self.geek_emb = nn.Embedding.from_pretrained(
-            torch.from_numpy(pool['geek_bert_vec']),
+            torch.from_numpy(pool.geek_bert_vec),
             freeze=False,
             padding_idx=0
         )
         self.job_emb = nn.Embedding.from_pretrained(
-            torch.from_numpy(pool['job_bert_vec']),
+            torch.from_numpy(pool.job_bert_vec),
             freeze=False,
             padding_idx=0
         )

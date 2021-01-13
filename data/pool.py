@@ -24,22 +24,14 @@ class PJFPool(object):
                     token = line.strip()
                     token2id[token] = i
                     id2token.append(token)
-            self.pool[f'{target}_token2id'] = token2id
-            self.pool[f'{target}_id2token'] = id2token
-            self.pool[f'{target}_num'] = len(id2token)
-
-    def __getitem__(self, item):
-        return self.pool[item]
-
-    def __contains__(self, key):
-        if not isinstance(key, str):
-            raise TypeError("index must be a str.")
-        return key in self.pool
+            setattr(self, f'{target}_token2id', token2id)
+            setattr(self, f'{target}_id2token', id2token)
+            setattr(self, f'{target}_num', len(id2token))
 
     def __str__(self):
         return '\n\t'.join(['Pool:'] + [
-            f'{self.pool["geek_num"]} geeks',
-            f'{self.pool["job_num"]} jobs'
+            f'{self.geek_num} geeks',
+            f'{self.job_num} jobs'
         ])
 
     def __repr__(self):
@@ -61,11 +53,11 @@ class MFwBERTPool(PJFPool):
             filepath = os.path.join(self.config['dataset_path'], f'{target}.bert.npy')
             self.logger.info(f'Loading {filepath}')
             bert_vec = np.load(filepath).astype(np.float32)
-            self.pool[f'{target}_bert_vec'] = bert_vec
+            setattr(self, f'{target}_bert_vec', bert_vec)
 
     def __str__(self):
         return '\n\t'.join([
             super().__str__(),
-            f'geek_bert_vec: {self.pool["geek_bert_vec"].shape}',
-            f'job_bert_vec: {self.pool["job_bert_vec"].shape}'
+            f'geek_bert_vec: {self.geek_bert_vec.shape}',
+            f'job_bert_vec: {self.job_bert_vec.shape}'
         ])

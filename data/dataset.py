@@ -30,10 +30,10 @@ class PJFDataset(Dataset):
         self._reformat()
 
     def _init_attributes(self, pool):
-        self.geek_num = pool['geek_num']
-        self.job_num = pool['job_num']
-        self.geek_token2id = pool['geek_token2id']
-        self.job_token2id = pool['job_token2id']
+        self.geek_num = pool.geek_num
+        self.job_num = pool.job_num
+        self.geek_token2id = pool.geek_token2id
+        self.job_token2id = pool.job_token2id
 
     def _load_inters(self):
         filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}')

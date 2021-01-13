@@ -14,8 +14,8 @@ class PJFModel(nn.Module):
         self.logger = getLogger()
         self.device = config['device']
 
-        self.geek_num = pool['geek_num']
-        self.job_num = pool['job_num']
+        self.geek_num = pool.geek_num
+        self.job_num = pool.job_num
 
     def calculate_loss(self, interaction):
         """Calculate the training loss for a batch data.
