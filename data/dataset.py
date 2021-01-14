@@ -89,7 +89,9 @@ class BPJFNNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
         self.geek_id2longsent = pool.geek_id2longsent
+        self.geek_id2longsent_len = pool.geek_id2longsent_len
         self.job_id2longsent = pool.job_id2longsent
+        self.job_id2longsent_len = pool.job_id2longsent_len
 
     def __getitem__(self, index):
         geek_id = self.geek_ids[index]
@@ -97,6 +99,8 @@ class BPJFNNDataset(PJFDataset):
         return {
             'geek_id': geek_id,
             'geek_longsent': self.geek_id2longsent[geek_id],
+            'geek_longsent_len': self.geek_id2longsent_len[geek_id],
             'job_longsent': self.job_id2longsent[job_id],
+            'job_longsent_len': self.job_id2longsent_len[job_id],
             'label': self.labels[index]
         }
