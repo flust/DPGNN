@@ -44,14 +44,6 @@ class BPJFNN(PJFModel):
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
 
         # parameters initialization
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
-        elif isinstance(module, nn.LSTM):
-            xavier_uniform_(module.weight_hh_l0)
-            xavier_uniform_(module.weight_ih_l0)
 
     def _single_bpj_layer(self, interaction, token):
         longsent = interaction[f'{token}_longsent']
