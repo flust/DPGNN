@@ -108,3 +108,28 @@ class BPJFNNDataset(PJFDataset):
             'job_longsent_len': self.job_id2longsent_len[job_id],
             'label': self.labels[index]
         }
+
+
+class BERTDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super().__init__(config, pool, phase)
+        self._load_inter_bert_vec()
+
+    def _load_inter_bert_vec(self):
+        bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+        self.logger.info(f'Loading from {bert_filepath}')
+        self.bert_vec = torch.FloatTensor(np.load(bert_filepath).astype(np.float32))
+        assert self.labels.shape[0] == self.bert_vec.shape[0]
+
+    def __getitem__(self, index):
+        return {
+            'geek_id': self.geek_ids[index],
+            'bert_vec': self.bert_vec[index],
+            'label': self.labels[index]
+        }
+
+    def __str__(self):
+        return '\n\t'.join([
+            super().__str__(),
+            f'bert_vec: {self.bert_vec.shape}'
+        ])

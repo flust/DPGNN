@@ -63,6 +63,7 @@ class MFwBERTPool(PJFPool):
             f'job_bert_vec: {self.job_bert_vec.shape}'
         ])
 
+
 class BPJFNNPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
@@ -112,3 +113,8 @@ class BPJFNNPool(PJFPool):
             f'geek_id2longsent: {self.geek_id2longsent.shape}',
             f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
+
+
+class BERTPool(PJFPool):
+    def __init__(self, config):
+        super().__init__(config)
