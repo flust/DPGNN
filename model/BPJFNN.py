@@ -44,23 +44,19 @@ class BPJFNN(PJFModel):
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
 
         # parameters initialization
-        self.apply(self._init_weights)
 
-    def _init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
-        elif isinstance(module, nn.LSTM):
-            xavier_uniform_(module.weight_hh_l0)
-            xavier_uniform_(module.weight_ih_l0)
+    def _single_bpj_layer(self, interaction, token):
+        longsent = interaction[f'{token}_longsent']
+        longsent_len = interaction[f'{token}_longsent_len']
+        vec = self.emb(longsent)
+        vec, _ = getattr(self, f'{token}_biLSTM')(vec)
+        vec = torch.sum(vec, dim=1) / longsent_len.unsqueeze(-1)
+        return vec
 
     def forward(self, interaction):
-        geek_longsent = interaction['geek_longsent']
-        job_longsent = interaction['job_longsent']
-        geek_vec, job_vec = self.emb(geek_longsent), self.emb(job_longsent)
-        geek_vec, _ = self.geek_biLSTM(geek_vec)
-        job_vec, _ = self.job_biLSTM(job_vec)
-        geek_vec = torch.mean(geek_vec, dim=1)
-        job_vec = torch.mean(job_vec, dim=1)
+        geek_vec = self._single_bpj_layer(interaction, 'geek')
+        job_vec = self._single_bpj_layer(interaction, 'job')
+
         x = torch.cat([job_vec, geek_vec, job_vec - geek_vec], dim=1)
         x = self.mlp(x).squeeze(1)
         return x

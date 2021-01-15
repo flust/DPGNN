@@ -91,6 +91,7 @@ class BPJFNNPool(PJFPool):
         for target in ['geek', 'job']:
             max_sent_len = self.config[f'{target}_longsent_len']
             id2longsent = torch.zeros([getattr(self, f'{target}_num'), max_sent_len], dtype=torch.int64)
+            id2longsent_len = torch.zeros(getattr(self, f'{target}_num'))
             filepath = os.path.join(self.config['dataset_path'], f'{target}.longsent')
             token2id = getattr(self, f'{target}_token2id')
             self.logger.info(f'Loading {filepath}')
@@ -99,14 +100,15 @@ class BPJFNNPool(PJFPool):
                     token, longsent = line.strip().split('\t')
                     idx = token2id[token]
                     longsent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in longsent.split(' ')])
-                    longsent = F.pad(longsent, (0, max_sent_len - longsent.shape[0]))
-                    id2longsent[idx] = longsent
+                    id2longsent[idx] = F.pad(longsent, (0, max_sent_len - longsent.shape[0]))
+                    id2longsent_len[idx] = min(max_sent_len, longsent.shape[0])
             setattr(self, f'{target}_id2longsent', id2longsent)
+            setattr(self, f'{target}_id2longsent_len', id2longsent_len)
 
     def __str__(self):
         return '\n\t'.join([
             super().__str__(),
-            f'wd_num: {self.wd_num}',
+            f'{self.wd_num} words',
             f'geek_id2longsent: {self.geek_id2longsent.shape}',
             f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
