@@ -85,9 +85,13 @@ class MFwBERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
 
+
 class BPJFNNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
+
+    def _init_attributes(self, pool):
+        super()._init_attributes(pool)
         self.geek_id2longsent = pool.geek_id2longsent
         self.job_id2longsent = pool.job_id2longsent
 
