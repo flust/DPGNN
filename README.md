@@ -7,15 +7,18 @@ Codes of Person-Job Fit for Vulnerable Candidates
 
 ```
 dataset_path/
-├── data.train      # interaction
+├── data.train              # interaction
 ├── data.test
 ├── data.valid
-├── geek.token      # id tokens
+├── geek.token              # id tokens
 ├── job.token
-├── geek.bert.npy   # pretrained bert vecs
-├── job.bert.npy
-├── geek.longsent   # text files after word splitting
-└── job.longsent
+├── geek.longsent           # text files after word splitting
+├── job.longsent
+├── data.train.bert.npy     # pretrained bert vecs
+├── data.test.bert.npy
+├── data.valid.bert.npy
+├── geek.bert.npy
+└── job.bert.npy
 ```
 
 ## Baseline
