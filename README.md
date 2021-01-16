@@ -45,3 +45,11 @@ Text-based Person-Job Fit Model.
 ```bash
 python main.py -m BPJFNN
 ```
+
+### BERT
+
+Fine-tuned BERT + MLP
+
+```bash
+python main.py -m BERT
+```
