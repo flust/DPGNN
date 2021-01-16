@@ -43,8 +43,6 @@ class BPJFNN(PJFModel):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
 
-        # parameters initialization
-
     def _single_bpj_layer(self, interaction, token):
         longsent = interaction[f'{token}_longsent']
         longsent_len = interaction[f'{token}_longsent_len']

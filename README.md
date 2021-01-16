@@ -35,3 +35,13 @@ MF model, whose id embedding tables are initialized by pretrained BERT vectors.
 ```bash
 python main.py -m MFwBERT
 ```
+
+### BPJFNN
+
+Text-based Person-Job Fit Model.
+
+> Chuan Qin et.al. Enhancing Person-Job Fit for Talent Recruitment: An Ability-aware Neural Network Approach. SIGIR 2018.
+
+```bash
+python main.py -m BPJFNN
+```
