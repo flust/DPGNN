@@ -80,7 +80,7 @@ class BPJFNNPool(PJFPool):
         filepath = os.path.join(self.config['dataset_path'], 'word.cnt')
         self.logger.info(f'Loading {filepath}')
         with open(filepath, 'r', encoding='utf-8') as file:
-            for i, line in tqdm(enumerate(file)):
+            for i, line in enumerate(file):
                 wd, cnt = line.strip().split('\t')
                 if int(cnt) < min_word_cnt:
                     break
