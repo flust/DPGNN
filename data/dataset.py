@@ -78,20 +78,20 @@ class PJFDataset(Dataset):
 
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
-        super().__init__(config, pool, phase)
+        super(MFDataset, self).__init__(config, pool, phase)
 
 
 class MFwBERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
-        super().__init__(config, pool, phase)
+        super(MFwBERTDataset, self).__init__(config, pool, phase)
 
 
 class BPJFNNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
-        super().__init__(config, pool, phase)
+        super(BPJFNNDataset, self).__init__(config, pool, phase)
 
     def _init_attributes(self, pool):
-        super()._init_attributes(pool)
+        super(BPJFNNDataset, self)._init_attributes(pool)
         self.geek_id2longsent = pool.geek_id2longsent
         self.geek_id2longsent_len = pool.geek_id2longsent_len
         self.job_id2longsent = pool.job_id2longsent
@@ -112,7 +112,7 @@ class BPJFNNDataset(PJFDataset):
 
 class BERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
-        super().__init__(config, pool, phase)
+        super(BERTDataset, self).__init__(config, pool, phase)
         self._load_inter_bert_vec()
 
     def _load_inter_bert_vec(self):
@@ -130,6 +130,6 @@ class BERTDataset(PJFDataset):
 
     def __str__(self):
         return '\n\t'.join([
-            super().__str__(),
+            super(BERTDataset, self).__str__(),
             f'bert_vec: {self.bert_vec.shape}'
         ])

@@ -41,12 +41,12 @@ class PJFPool(object):
 
 class MFPool(PJFPool):
     def __init__(self, config):
-        super().__init__(config)
+        super(MFPool, self).__init__(config)
 
 
 class MFwBERTPool(PJFPool):
     def __init__(self, config):
-        super().__init__(config)
+        super(MFwBERTPool, self).__init__(config)
         self._load_bert_vec()
 
     def _load_bert_vec(self):
@@ -58,7 +58,7 @@ class MFwBERTPool(PJFPool):
 
     def __str__(self):
         return '\n\t'.join([
-            super().__str__(),
+            super(MFwBERTPool, self).__str__(),
             f'geek_bert_vec: {self.geek_bert_vec.shape}',
             f'job_bert_vec: {self.job_bert_vec.shape}'
         ])
@@ -66,7 +66,7 @@ class MFwBERTPool(PJFPool):
 
 class BPJFNNPool(PJFPool):
     def __init__(self, config):
-        super().__init__(config)
+        super(BPJFNNPool, self).__init__(config)
         self._load_word_cnt()
         self._load_longsent()
 
@@ -108,7 +108,7 @@ class BPJFNNPool(PJFPool):
 
     def __str__(self):
         return '\n\t'.join([
-            super().__str__(),
+            super(BPJFNNPool, self).__str__(),
             f'{self.wd_num} words',
             f'geek_id2longsent: {self.geek_id2longsent.shape}',
             f'job_id2longsent: {self.job_id2longsent.shape}'

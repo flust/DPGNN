@@ -44,4 +44,4 @@ class PJFModel(nn.Module):
         """
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
-        return super().__str__() + '\n\tTrainable parameters: {}'.format(params)
+        return super(PJFModel, self).__str__() + '\n\tTrainable parameters: {}'.format(params)
