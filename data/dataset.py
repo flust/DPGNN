@@ -1,6 +1,5 @@
 import os
 from logging import getLogger
-import importlib
 
 import numpy as np
 import torch
@@ -27,7 +26,6 @@ class PJFDataset(Dataset):
 
         self._init_attributes(pool)
         self._load_inters()
-        self._reformat()
 
     def _init_attributes(self, pool):
         self.geek_num = pool.geek_num
@@ -48,11 +46,6 @@ class PJFDataset(Dataset):
                 job_id = self.job_token2id[job_token]
                 self.job_ids.append(job_id)
                 self.labels.append(int(label))
-        self.geek_ids = np.array(self.geek_ids)
-        self.job_ids = np.array(self.job_ids)
-        self.labels = np.array(self.labels)
-
-    def _reformat(self):
         self.geek_ids = torch.LongTensor(self.geek_ids)
         self.job_ids = torch.LongTensor(self.job_ids)
         self.labels = torch.FloatTensor(self.labels)
