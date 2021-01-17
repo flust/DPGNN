@@ -106,9 +106,9 @@ class BPJFNNDataset(PJFDataset):
 class BERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(BERTDataset, self).__init__(config, pool, phase)
-        self._load_inter_bert_vec()
 
-    def _load_inter_bert_vec(self):
+    def _load_inters(self):
+        super()._load_inters()
         bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
         self.logger.info(f'Loading from {bert_filepath}')
         self.bert_vec = torch.FloatTensor(np.load(bert_filepath).astype(np.float32))
