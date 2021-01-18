@@ -117,4 +117,49 @@ class BPJFNNPool(PJFPool):
 
 class BERTPool(PJFPool):
     def __init__(self, config):
-        super().__init__(config)
+        super(BERTPool, self).__init__(config)
+
+
+class VPJFPool(BPJFNNPool):
+    def __init__(self, config):
+        super(VPJFPool, self).__init__(config)
+
+    def _load_ids(self):
+        super(VPJFPool, self)._load_ids()
+        filepath = os.path.join(self.config['dataset_path'], 'job.search.token')
+        self.logger.info(f'Loading {filepath}')
+        ori_job_num = self.job_num
+        with open(filepath, 'r') as file:
+            for i, line in enumerate(file):
+                token = line.strip()
+                assert token not in self.job_token2id
+                self.job_token2id[token] = i + ori_job_num
+                self.job_id2token.append(token)
+        self.job_search_token_num = len(self.job_id2token) - ori_job_num
+        self.job_num = len(self.job_id2token)
+
+    def _load_word_cnt(self):
+        super(VPJFPool, self)._load_word_cnt()
+        ori_wd_num = len(self.id2wd)
+        filepath = os.path.join(self.config['dataset_path'], 'word.search.id')
+        self.logger.info(f'Loading {filepath}')
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for i, line in enumerate(file):
+                wd = line.strip()
+                assert wd not in self.wd2id
+                self.wd2id[wd] = i + ori_wd_num
+                self.id2wd.append(wd)
+        self.search_wd_num = len(self.id2wd) - ori_wd_num
+        self.wd_num = len(self.id2wd)
+
+    def __str__(self):
+        return '\n\t'.join([
+            super(VPJFPool, self).__str__(),
+            f'{self.job_search_token_num} job tokens only exist in search log',
+            f'{self.search_wd_num} words only exist in search log'
+        ])
+
+
+class VPJFv1Pool(VPJFPool):
+    def __init__(self, config):
+        super(VPJFv1Pool, self).__init__(config)
