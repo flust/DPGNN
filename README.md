@@ -56,3 +56,11 @@ Fine-tuned BERT + MLP
 ```bash
 python main.py -m BERT
 ```
+
+### VPJFv1
+
+* Text Matching: BERT
+* Intent Modeling:
+    * l_add history (64)
+    * qwd emb pooling
+    * job desc emb pooling
