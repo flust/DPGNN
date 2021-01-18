@@ -1,6 +1,8 @@
 import argparse
 from logging import getLogger
 
+import wandb
+
 from config import Config
 from data.dataset import create_datasets
 from data.dataloader import construct_dataloader
@@ -48,6 +50,7 @@ def main_process(model, config_dict=None, saved=True):
     # model loading and initialization
     model = dynamic_load(config, 'model')(config, pool).to(config['device'])
     logger.info(model)
+    wandb.watch(model, model.loss, log="all", log_freq=100)
 
     # trainer loading and initialization
     trainer = Trainer(config, model)
@@ -59,6 +62,7 @@ def main_process(model, config_dict=None, saved=True):
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=saved,
                                    show_progress=config['show_progress'])
+    wandb.log(test_result)
 
     logger.info('best valid result: {}'.format(best_valid_result))
     logger.info('test result: {}'.format(test_result))

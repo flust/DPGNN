@@ -24,7 +24,6 @@ class Trainer(object):
     def __init__(self, config, model):
         self.config = config
         self.model = model
-        wandb.watch(model, model.loss, log="all", log_freq=100)
 
         self.logger = getLogger()
         self.learner = config['learner'].lower()
@@ -124,6 +123,7 @@ class Trainer(object):
             dict: valid result
         """
         valid_result = self.evaluate(valid_data, load_best_model=False, show_progress=show_progress)
+        wandb.log(valid_result)
         valid_score = valid_result[self.valid_metric]
         return valid_score, valid_result
 
@@ -324,6 +324,5 @@ class Trainer(object):
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.evaluate(batch_matrix_list)
-        wandb.log(result)
 
         return result
