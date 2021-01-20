@@ -255,3 +255,8 @@ class VPJFv1Dataset(VPJFDataset):
 class VPJFv2Dataset(VPJFDataset):
     def __init__(self, config, pool, phase):
         super(VPJFv2Dataset, self).__init__(config, pool, phase)
+
+
+class VPJFv3Dataset(VPJFDataset):
+    def __init__(self, config, pool, phase):
+        super(VPJFv3Dataset, self).__init__(config, pool, phase)
