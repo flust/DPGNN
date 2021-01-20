@@ -61,6 +61,6 @@ python main.py -m BERT
 
 * Text Matching: BERT
 * Intent Modeling:
-    * l_add history (64)
+    * l_add history (64) / l_ac history (32)
     * qwd emb pooling
     * job desc emb pooling

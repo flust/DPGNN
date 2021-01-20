@@ -34,7 +34,8 @@ class VPJFv1(PJFModel):
         self.attn_layer = nn.MultiheadAttention(
             embed_dim=self.hd_size,
             num_heads=self.num_heads,
-            dropout=self.dropout
+            dropout=self.dropout,
+            bias=False
         )
 
         self.intent_mlp = MLPLayers(
@@ -98,11 +99,15 @@ class VPJFv1(PJFModel):
         intent_modeling_vec = self.intent_mlp(torch.cat([
             job_id_vec, intent_vec, job_id_vec - intent_vec, job_id_vec * intent_vec
         ], dim=1))                                              # (B, H)
-        return intent_modeling_vec
 
-    def predict_layer(self, vec1, vec2):
+        search_his_mask = torch.sum(job_his, dim=1) == 0
+
+        return intent_modeling_vec, search_his_mask
+
+    def predict_layer(self, vec1, vec2, mask2):
         a1 = self.self_attn_layer(vec1)                         # (B, 1)
         a2 = self.self_attn_layer(vec2)                         # (B, 1)
+        a2 = torch.masked_fill(a2, mask2.unsqueeze(-1), -10000)
         weight = torch.softmax(torch.cat([a1, a2], dim=1), dim=1).unsqueeze(-1)
         vecs = torch.stack([vec1, vec2]).transpose(1, 0)
         x = torch.sum(weight * vecs, dim=1)
@@ -111,8 +116,8 @@ class VPJFv1(PJFModel):
 
     def forward(self, interaction):
         text_matching_vec = self._text_matching_layer(interaction)
-        intent_modeling_vec = self._intent_modeling_layer(interaction)
-        score = self.predict_layer(text_matching_vec, intent_modeling_vec)
+        intent_modeling_vec, search_his_mask = self._intent_modeling_layer(interaction)
+        score = self.predict_layer(text_matching_vec, intent_modeling_vec, search_his_mask)
         return score
 
     def calculate_loss(self, interaction):
