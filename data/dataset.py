@@ -250,3 +250,8 @@ class VPJFDataset(BERTDataset):
 class VPJFv1Dataset(VPJFDataset):
     def __init__(self, config, pool, phase):
         super(VPJFv1Dataset, self).__init__(config, pool, phase)
+
+
+class VPJFv2Dataset(VPJFDataset):
+    def __init__(self, config, pool, phase):
+        super(VPJFv2Dataset, self).__init__(config, pool, phase)

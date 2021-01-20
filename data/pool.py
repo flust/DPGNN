@@ -163,3 +163,8 @@ class VPJFPool(BPJFNNPool):
 class VPJFv1Pool(VPJFPool):
     def __init__(self, config):
         super(VPJFv1Pool, self).__init__(config)
+
+
+class VPJFv2Pool(VPJFPool):
+    def __init__(self, config):
+        super(VPJFv2Pool, self).__init__(config)
