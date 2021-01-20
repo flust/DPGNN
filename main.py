@@ -32,7 +32,13 @@ def main_process(model, config_dict=None, saved=True):
     # configurations initialization
     config = Config(model, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
-    run = wandb.init(config=config.params, project='vpjf', name=model if config['name'] is None else config['name'], reinit=True)
+    run = wandb.init(
+        config=config.params,
+        project='vpjf',
+        name=model if config['name'] is None else config['name'],
+        reinit=True,
+        disabled=True
+    )
 
     # logger initialization
     init_logger(config)
