@@ -25,7 +25,7 @@ class Config(object):
         """
         self.params = self._load_parameters(model, config_dict)
         self._init_device()
-        wandb.init(config=self.params, project='vpjf', name=model, mode='disabled')
+        wandb.init(config=self.params, project='vpjf', name=model if self['name'] is None else self['name'])
 
     def _load_parameters(self, model, params_from_config_dict):
         params = {'model': model}

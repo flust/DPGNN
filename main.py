@@ -13,6 +13,7 @@ from utils import init_seed, init_logger, dynamic_load
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', '-m', type=str, help='Model to test')
+    parser.add_argument('--name', '-n', type=str, help='Name of exp')
 
     args = parser.parse_args()
     return args
@@ -76,4 +77,6 @@ def main_process(model, config_dict=None, saved=True):
 
 if __name__ == "__main__":
     args = get_arguments()
-    main_process(model=args.model)
+    main_process(model=args.model, config_dict={
+        'name': args.name
+    })
