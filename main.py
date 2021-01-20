@@ -37,7 +37,7 @@ def main_process(model, config_dict=None, saved=True):
         project='vpjf',
         name=model if config['name'] is None else config['name'],
         reinit=True,
-        disabled=True
+        mode='disabled'
     )
 
     # logger initialization
