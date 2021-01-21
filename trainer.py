@@ -278,7 +278,7 @@ class Trainer(object):
         return best, cur_step, stop_flag, update_flag
 
     @torch.no_grad()
-    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False, save_score=False):
         """Evaluate the model based on the eval data.
 
         Args:
@@ -294,6 +294,11 @@ class Trainer(object):
         """
         if not eval_data:
             return
+
+        score_file = None
+        if save_score:
+            model_name = self.config['model']
+            score_file = open(f'{model_name}.score', 'w', encoding='utf-8')
 
         if load_best_model:
             if model_file:
@@ -320,9 +325,15 @@ class Trainer(object):
         for batch_idx, batched_data in iter_data:
             interaction = batched_data
             scores = self.model.predict(dict2device(interaction, self.device))
+            if save_score:
+                for s in scores.cpu().numpy():
+                    score_file.write(f'{s}\n')
 
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.evaluate(batch_matrix_list)
+
+        if save_score:
+            score_file.close()
 
         return result
