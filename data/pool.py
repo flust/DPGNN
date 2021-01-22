@@ -114,6 +114,59 @@ class BPJFNNPool(PJFPool):
             f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
 
+class PJFNNPool(PJFPool):
+    def __init__(self, config):
+        super().__init__(config)
+        self._load_word_cnt()
+        self._load_sents()
+
+    def _load_word_cnt(self):
+        min_word_cnt = self.config['min_word_cnt']
+        self.wd2id = {
+            '[WD_PAD]': 0,
+            '[WD_MISS]': 1
+        }
+        self.id2wd = ['[WD_PAD]', '[WD_MISS]']
+        filepath = os.path.join(self.config['dataset_path'], 'word.cnt')
+        self.logger.info(f'Loading {filepath}')
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for i, line in tqdm(enumerate(file)):
+                wd, cnt = line.strip().split('\t')
+                if int(cnt) < min_word_cnt:
+                    break
+                self.wd2id[wd] = i + 2
+                self.id2wd.append(wd)
+        self.wd_num = len(self.id2wd)
+
+    def _load_sents(self):
+        for target in ['geek', 'job']:
+            filepath = os.path.join(self.config['dataset_path'], f'{target}.sent')
+            max_sent_num = self.config[f'{target}_max_sent_num']
+            max_sent_len = self.config[f'{target}_max_sent_len']
+
+            sents = {}
+            sent_num = {}
+            tensor_size = [max_sent_num, max_sent_len]
+            token2id = getattr(self, f'{target}_token2id')
+            self.logger.info(f'Loading {filepath}')
+            with open(filepath, 'r', encoding='utf-8') as file:
+                for line in tqdm(file):
+                    #print(line)
+                    try:
+                        token, sent = line.strip().split('\t')
+                    except:
+                        #print(line)
+                        continue
+                    idx = token2id[token]
+                    if idx not in sents:
+                        sents[idx] = torch.zeros(tensor_size).long()
+                        sent_num[idx] = 0
+                    if sent_num[idx] == tensor_size[0]: continue
+                    sent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in sent.split(' ')])
+                    sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))
+                    sent_num[idx] += 1
+            setattr(self, f'{target}_sents', sents)
+
 
 class BERTPool(PJFPool):
     def __init__(self, config):

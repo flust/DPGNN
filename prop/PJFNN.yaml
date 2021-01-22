@@ -1,0 +1,17 @@
+# Data
+min_word_cnt: 5
+
+geek_max_sent_num: 10
+job_max_sent_num: 10
+geek_max_sent_len: 30
+job_max_sent_len: 30
+
+# Model
+embedding_size: 64
+
+# Training
+learning_rate: 0.0003
+
+# General
+train_batch_size: 2048
+eval_batch_size: 4096
