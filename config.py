@@ -3,7 +3,6 @@ import re
 
 import yaml
 import torch
-import wandb
 
 
 class Config(object):
@@ -25,7 +24,6 @@ class Config(object):
         """
         self.params = self._load_parameters(model, config_dict)
         self._init_device()
-        wandb.init(config=self.params, project='vpjf', name=model, mode='disabled')
 
     def _load_parameters(self, model, params_from_config_dict):
         params = {'model': model}

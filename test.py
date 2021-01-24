@@ -11,12 +11,13 @@ from utils import init_seed, init_logger, dynamic_load
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', '-f', type=str, help='Model file to test')
+    parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score')
 
     args = parser.parse_args()
     return args
 
 
-def test_process(resume_file):
+def test_process(resume_file, save=False):
     checkpoint = torch.load(resume_file)
 
     config = checkpoint['config']
@@ -52,11 +53,11 @@ def test_process(resume_file):
 
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=False,
-                                   show_progress=config['show_progress'])
+                                   show_progress=config['show_progress'], save_score=save)
 
     logger.info('test result: {}'.format(test_result))
 
 
 if __name__ == "__main__":
     args = get_arguments()
-    test_process(resume_file=args.file)
+    test_process(resume_file=args.file, save=args.save)

@@ -1,6 +1,8 @@
 import argparse
 from logging import getLogger
 
+import wandb
+
 from config import Config
 from data.dataset import create_datasets
 from data.dataloader import construct_dataloader
@@ -11,6 +13,7 @@ from utils import init_seed, init_logger, dynamic_load
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', '-m', type=str, help='Model to test')
+    parser.add_argument('--name', '-n', type=str, help='Name of exp')
 
     args = parser.parse_args()
     return args
@@ -29,6 +32,13 @@ def main_process(model, config_dict=None, saved=True):
     # configurations initialization
     config = Config(model, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
+    run = wandb.init(
+        config=config.params,
+        project='vpjf',
+        name=model if config['name'] is None else config['name'],
+        reinit=True,
+        mode='disabled'
+    )
 
     # logger initialization
     init_logger(config)
@@ -48,6 +58,7 @@ def main_process(model, config_dict=None, saved=True):
     # model loading and initialization
     model = dynamic_load(config, 'model')(config, pool).to(config['device'])
     logger.info(model)
+    wandb.watch(model, model.loss, log="all", log_freq=100)
 
     # trainer loading and initialization
     trainer = Trainer(config, model)
@@ -59,9 +70,12 @@ def main_process(model, config_dict=None, saved=True):
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=saved,
                                    show_progress=config['show_progress'])
+    wandb.log(test_result)
 
     logger.info('best valid result: {}'.format(best_valid_result))
     logger.info('test result: {}'.format(test_result))
+
+    run.finish()
 
     return {
         'best_valid_score': best_valid_score,
@@ -72,4 +86,6 @@ def main_process(model, config_dict=None, saved=True):
 
 if __name__ == "__main__":
     args = get_arguments()
-    main_process(model=args.model)
+    main_process(model=args.model, config_dict={
+        'name': args.name
+    })
