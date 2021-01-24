@@ -1,8 +1,8 @@
 # Data
 min_word_cnt: 5
 
-geek_max_sent_num: 10
-job_max_sent_num: 10
+geek_max_sent_num: 20
+job_max_sent_num: 20
 geek_max_sent_len: 30
 job_max_sent_len: 30
 

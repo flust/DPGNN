@@ -28,9 +28,13 @@ class TextCNN(nn.Module):
             raise ValueError('method {} not exist'.format(method))
 
     def forward(self, x):
+       # print("xxx1 "+str(x.shape))
         x = self.net1(x)
+       # print("xxx2 "+str(x.shape))
         x = self.net2(x).squeeze(2)
+       # print("xxx3 "+str(x.shape))
         x = self.pool(x).squeeze(1)
+       # print("xxx4 "+str(x.shape))
         return x
 
 class PJFNN(PJFModel):
@@ -69,13 +73,15 @@ class PJFNN(PJFModel):
     def forward(self, interaction):
         geek_sents = interaction['geek_sents']
         job_sents = interaction['job_sents']
-        geek_vec, job_vec = self.emb(geek_sents), self.emb(job_sents)
+        geek_vec = self.emb(geek_sents)
+        job_vec = self.emb(job_sents)
         # print(geek_vec.shape)
         # exit()
+        geek_vec = self.geek_layer(geek_vec)
         job_vec = self.job_layer(job_vec)
-        geek_vec, job_vec = self.geek_layer(geek_vec), self.job_layer(job_vec)
         x = geek_vec * job_vec
         x = self.mlp(x).squeeze(1)
+        #print("sssss ",x.shape)
         return x    
 
     def calculate_loss(self, interaction):
@@ -84,4 +90,4 @@ class PJFNN(PJFModel):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return nn.sigmoid(self.forward(interaction))
+        return torch.sigmoid(self.forward(interaction))

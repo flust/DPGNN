@@ -109,6 +109,26 @@ class BPJFNNDataset(PJFDataset):
             'label': self.labels[index]
         }
 
+class PJFNNDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super().__init__(config, pool, phase)
+
+    def _init_attributes(self, pool):
+        super()._init_attributes(pool)
+        self.geek_sents = pool.geek_sents
+        self.job_sents = pool.job_sents
+
+    def __getitem__(self, index):
+        geek_id = self.geek_ids[index]
+        geek_id_item = geek_id.item()
+        job_id = self.job_ids[index].item()
+        return {
+            'geek_id': geek_id,
+            'geek_sents': self.geek_sents[geek_id_item],
+            'job_sents': self.job_sents[job_id],
+            'label': self.labels[index]
+        }
+
 
 class BERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
