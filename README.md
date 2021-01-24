@@ -61,7 +61,7 @@ python main.py -m BERT
 
 * Text Matching: BERT + MLP
 * Intent Modeling:
-    * l_add history (64) / l_ac history (32)
+    * l_add history (64)
     * qwd emb pooling
     * job desc emb pooling
 
@@ -69,7 +69,7 @@ python main.py -m BERT
 
 * Text Matching: BERT + **Linear**
 * Intent Modeling:
-    * l_add history (64) / l_ac history (32)
+    * l_add history (64)
     * qwd emb pooling
     * job desc emb pooling
 
@@ -77,6 +77,16 @@ python main.py -m BERT
 
 * Text Matching: BERT + Linear
 * Intent Modeling:
-    * l_add history (64) / l_ac history (32)
+    * l_add history (64)
     * qwd emb pooling
     * job desc emb **self attention**
+
+### VPJFv4
+
+* Text Matching: BERT + Linear
+* Intent Modeling:
+    * l_add history (64)
+    * qwd emb pooling
+    * job desc emb self attention
+* **User Modeling:**
+    * **MF pretrained**
