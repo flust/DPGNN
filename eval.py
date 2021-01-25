@@ -10,9 +10,9 @@ from utils import init_seed, init_logger, dynamic_load
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', '-f', type=str, help='Model file to test')
-    parser.add_argument('--phase', '-p', default='test', help='Which phase to evaluate')
-    parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score')
+    parser.add_argument('--file', '-f', type=str, help='Model file to test.')
+    parser.add_argument('--phase', '-p', default='test', help='Which phase to evaluate.')
+    parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score.')
 
     args = parser.parse_args()
     return args

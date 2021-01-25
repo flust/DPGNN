@@ -7,55 +7,36 @@ Codes of Person-Job Fit for Vulnerable Candidates
 
 ```
 dataset_path/
-├── data.train              # interaction
-├── data.test
-├── data.valid
-├── geek.token              # id tokens
-├── job.token
-├── geek.longsent           # text files after word splitting
-├── job.longsent
-├── data.train.bert.npy     # pretrained bert vecs
-├── data.test.bert.npy
-├── data.valid.bert.npy
-├── geek.bert.npy
-└── job.bert.npy
+├── data.{train/valid/test}[.{bert/his_len/job_his/qlen_his/qwd_his}.npy]
+├── data.search.{train/valid/test}
+├── {geek/job}.{token/sent/longsent/desc}
+├── job.search.bert.npy
+├── job.search.token
+├── word.cnt
+└── word.search.id
 ```
 
-## Baseline
+## Baseline & Method
 
 ### MF
 
 Traditional MF Model.
 
-```bash
-python main.py -m MF
-```
+### PJFNN
 
-### MFwBERT
+CNN-based Person-Job Fit Model.
 
-MF model, whose id embedding tables are initialized by pretrained BERT vectors.
-
-```bash
-python main.py -m MFwBERT
-```
+> Zhu et.al. Person-Job Fit: Adapting the Right Talent for the Right Job with Joint Representation Learning. TMIS 2018.
 
 ### BPJFNN
 
-Text-based Person-Job Fit Model.
+RNN-based Person-Job Fit Model.
 
-> Chuan Qin et.al. Enhancing Person-Job Fit for Talent Recruitment: An Ability-aware Neural Network Approach. SIGIR 2018.
-
-```bash
-python main.py -m BPJFNN
-```
+> Qin et.al. Enhancing Person-Job Fit for Talent Recruitment: An Ability-aware Neural Network Approach. SIGIR 2018.
 
 ### BERT
 
 Fine-tuned BERT + MLP
-
-```bash
-python main.py -m BERT
-```
 
 ### VPJFv5
 
@@ -66,3 +47,30 @@ python main.py -m BERT
     * job desc emb self attention
 * User Modeling:
     * MF pretrained
+
+## Usage
+
+### Train
+
+```bash
+python main.py [-h] [--model MODEL] [--name NAME]
+```
+
+Arguments:
+
+* `--model MODEL`, `-m MODEL` Model to test. `MODEL` should be one of:
+```
+MF, PJFNN, BPJFNN, BERT, VPJFv5
+```
+* `--name NAME`, `-n NAME` Name of this run. Defaults to `MODEL`.
+
+### Evaluation
+
+```bash
+python eval.py [-h] [--file FILE] [--phase PHASE] [--save]
+```
+
+Arguments:
+* `--file FILE`, `-f FILE`  Model file to test.
+* `--phase PHASE`, `-p PHASE` Which phase to evaluate. `PHASE` should be one of `train`, `valid` and `test`. Defaults to `test`.
+* `--save`, `-s` Whether to save predict score. Defaults to not saving.

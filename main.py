@@ -12,8 +12,8 @@ from utils import init_seed, init_logger, dynamic_load
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', '-m', type=str, help='Model to test')
-    parser.add_argument('--name', '-n', type=str, help='Name of exp')
+    parser.add_argument('--model', '-m', type=str, help='Model to test.')
+    parser.add_argument('--name', '-n', type=str, help='Name of this run.')
 
     args = parser.parse_args()
     return args
