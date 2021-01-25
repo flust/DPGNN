@@ -138,4 +138,5 @@ saved/
 remained/
 wandb/
 nohup.out
-*.score
+*_score/
+assets/
