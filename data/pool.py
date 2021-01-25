@@ -44,9 +44,9 @@ class MFPool(PJFPool):
         super(MFPool, self).__init__(config)
 
 
-class MFwBERTPool(PJFPool):
+class BERTPool(PJFPool):
     def __init__(self, config):
-        super(MFwBERTPool, self).__init__(config)
+        super(BERTPool, self).__init__(config)
         self._load_bert_vec()
 
     def _load_bert_vec(self):
@@ -58,7 +58,7 @@ class MFwBERTPool(PJFPool):
 
     def __str__(self):
         return '\n\t'.join([
-            super(MFwBERTPool, self).__str__(),
+            super(BERTPool, self).__str__(),
             f'geek_bert_vec: {self.geek_bert_vec.shape}',
             f'job_bert_vec: {self.job_bert_vec.shape}'
         ])
@@ -213,16 +213,6 @@ class VPJFPool(BPJFNNPool):
         ])
 
 
-class VPJFv1Pool(VPJFPool):
+class VPJFv5Pool(VPJFPool):
     def __init__(self, config):
-        super(VPJFv1Pool, self).__init__(config)
-
-
-class VPJFv2Pool(VPJFPool):
-    def __init__(self, config):
-        super(VPJFv2Pool, self).__init__(config)
-
-
-class VPJFv3Pool(VPJFPool):
-    def __init__(self, config):
-        super(VPJFv3Pool, self).__init__(config)
+        super(VPJFv5Pool, self).__init__(config)

@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch.nn.init import normal_
 
@@ -89,3 +90,38 @@ def activation_layer(activation_name='relu', emb_dim=None):
         raise NotImplementedError("activation function {} is not implemented".format(activation_name))
 
     return activation
+
+
+class SimpleFusionLayer(nn.Module):
+    def __init__(self, hd_size):
+        super(SimpleFusionLayer, self).__init__()
+        self.fc = nn.Linear(hd_size * 4, hd_size)
+
+    def forward(self, a, b):
+        assert a.shape == b.shape
+        x = torch.cat([a, b, a * b, a - b], dim=-1)
+        x = self.fc(x)
+        x = torch.tanh(x)
+        return x
+
+
+class FusionLayer(nn.Module):
+    def __init__(self, hd_size):
+        super(FusionLayer, self).__init__()
+        self.m = SimpleFusionLayer(hd_size)
+        self.g = nn.Sequential(
+            nn.Linear(hd_size * 2, 1),
+            nn.Sigmoid()
+        )
+
+    def _single_layer(self, a, b):
+        ma = self.m(a, b)
+        x = torch.cat([a, b], dim=-1)
+        ga = self.g(x)
+        return ga * ma + (1 - ga) * a
+
+    def forward(self, a, b):
+        assert a.shape == b.shape
+        a = self._single_layer(a, b)
+        b = self._single_layer(b, a)
+        return torch.cat([a, b], dim=-1)

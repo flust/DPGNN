@@ -7,12 +7,15 @@ class Evaluator:
     def __init__(self, config):
         self.ranking_metric2func = {
             'ndcg': self._calcu_nDCG,
-            'mrr': self._calcu_MRR,
             'map': self._calcu_MAP,
         }
         self.topk = config['topk']
         self.maxtopk = max(self.topk)
         self.precision = config['metric_decimal_place']
+        if config['metrics'] is not None:
+            self.metrics = config['metrics']
+        else:
+            self.metrics = ['auc', 'map@5', 'map@10', 'mrr']
 
         self.base = []
         self.idcg = []
@@ -40,13 +43,23 @@ class Evaluator:
         result.update(self._calcu_cls_metrics(uid2topk))
         for m in result:
             result[m] = round(result[m], self.precision)
-        return result
+        return result, self._format_str(result)
+
+    def _format_str(self, result):
+        res = ''
+        for metric in self.metrics:
+            res += '\n\t{}:\t{:.4f}'.format(metric, result[metric])
+        return res
 
     def _calcu_ranking_metrics(self, uid2topk):
         result = {}
-        for m in ['ndcg', 'mrr', 'map']:
+        for m in ['ndcg', 'map']:
             for k in self.topk:
-                result[f'{m}@{k}'] = self.ranking_metric2func[m](uid2topk, k)
+                metric = f'{m}@{k}'
+                if metric in self.metrics:
+                    result[metric] = self.ranking_metric2func[m](uid2topk, k)
+        if 'mrr' in self.metrics:
+            result['mrr'] = self._calcu_MRR(uid2topk)
         return result
 
     def _calcu_cls_metrics(self, uid2topk):
@@ -67,10 +80,10 @@ class Evaluator:
             tot += dcg / self.idcg[int(pos) - 1]
         return tot / len(uid2topk)
 
-    def _calcu_MRR(self, uid2topk, k):
+    def _calcu_MRR(self, uid2topk):
         tot = 0
         for uid in uid2topk:
-            for i, (score, lb) in enumerate(uid2topk[uid][:k]):
+            for i, (score, lb) in enumerate(uid2topk[uid]):
                 if lb == 1:
                     tot += 1 / (i + 1)
                     break

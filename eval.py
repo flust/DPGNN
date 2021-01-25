@@ -10,14 +10,16 @@ from utils import init_seed, init_logger, dynamic_load
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', '-f', type=str, help='Model file to test')
-    parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score')
+    parser.add_argument('--file', '-f', type=str, help='Model file to test.')
+    parser.add_argument('--phase', '-p', default='test', help='Which phase to evaluate.')
+    parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score.')
 
     args = parser.parse_args()
     return args
 
 
-def test_process(resume_file, save=False):
+def eval_process(resume_file, phase='test', save=False):
+    assert phase in ['train', 'test', 'valid']
     checkpoint = torch.load(resume_file)
 
     config = checkpoint['config']
@@ -32,11 +34,11 @@ def test_process(resume_file, save=False):
     pool = dynamic_load(config, 'data.pool', 'Pool')(config)
     logger.info(pool)
 
-    test_dataset = dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, 'test')
-    logger.info(test_dataset)
+    eval_dataset = dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, phase)
+    logger.info(eval_dataset)
 
-    test_data = DataLoader(
-        dataset=test_dataset,
+    eval_data = DataLoader(
+        dataset=eval_dataset,
         batch_size=config['eval_batch_size'],
         shuffle=False,
         num_workers=config['num_workers'],
@@ -52,12 +54,12 @@ def test_process(resume_file, save=False):
     trainer = Trainer(config, model)
 
     # model evaluation
-    test_result = trainer.evaluate(test_data, load_best_model=False,
+    _, eval_result = trainer.evaluate(eval_data, load_best_model=False,
                                    show_progress=config['show_progress'], save_score=save)
 
-    logger.info('test result: {}'.format(test_result))
+    logger.info('result: {}'.format(eval_result))
 
 
 if __name__ == "__main__":
     args = get_arguments()
-    test_process(resume_file=args.file, save=args.save)
+    eval_process(resume_file=args.file, save=args.save)
