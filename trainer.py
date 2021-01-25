@@ -8,7 +8,7 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
 import wandb
 
-from utils import ensure_dir, get_local_time, dict2str, dict2device
+from utils import ensure_dir, get_local_time, dict2device
 from evaluator import Evaluator
 
 
@@ -122,10 +122,10 @@ class Trainer(object):
             float: valid score
             dict: valid result
         """
-        valid_result = self.evaluate(valid_data, load_best_model=False, show_progress=show_progress)
+        valid_result, valid_result_str = self.evaluate(valid_data, load_best_model=False, show_progress=show_progress)
         wandb.log(valid_result)
         valid_score = valid_result[self.valid_metric]
-        return valid_score, valid_result
+        return valid_score, valid_result, valid_result_str
 
     def _save_checkpoint(self, epoch):
         """Store the model parameters information and training information.
@@ -219,13 +219,13 @@ class Trainer(object):
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
-                valid_score, valid_result = self._valid_epoch(valid_data, show_progress=show_progress)
+                valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data, show_progress=show_progress)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = self._early_stopping(
                     valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = 'valid result:' + valid_result_str
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
@@ -331,9 +331,9 @@ class Trainer(object):
 
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-        result = self.evaluator.evaluate(batch_matrix_list)
+        result, result_str = self.evaluator.evaluate(batch_matrix_list)
 
         if save_score:
             score_file.close()
 
-        return result
+        return result, result_str

@@ -68,12 +68,12 @@ def main_process(model, config_dict=None, saved=True):
                                                       show_progress=config['show_progress'])
 
     # model evaluation
-    test_result = trainer.evaluate(test_data, load_best_model=saved,
+    test_result, test_result_str = trainer.evaluate(test_data, load_best_model=saved,
                                    show_progress=config['show_progress'])
     wandb.log(test_result)
 
     logger.info('best valid result: {}'.format(best_valid_result))
-    logger.info('test result: {}'.format(test_result))
+    logger.info('test result: {}'.format(test_result_str))
 
     run.finish()
 

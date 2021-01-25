@@ -111,22 +111,6 @@ def ensure_dir(dir_path):
         os.makedirs(dir_path)
 
 
-def dict2str(result_dict):
-    """ convert result dict to str
-
-    Args:
-        result_dict (dict): result dict
-
-    Returns:
-        str: result str
-    """
-
-    result_str = ''
-    for metric, value in result_dict.items():
-        result_str += str(metric) + ' : ' + str(value) + '    '
-    return result_str
-
-
 def dict2device(dct, device):
     new_dct = {}
     for k in dct:

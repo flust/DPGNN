@@ -12,6 +12,10 @@ class Evaluator:
         self.topk = config['topk']
         self.maxtopk = max(self.topk)
         self.precision = config['metric_decimal_place']
+        if config['metrics'] is not None:
+            self.metrics = config['metrics']
+        else:
+            self.metrics = ['auc', 'map@5', 'map@10', 'mrr']
 
         self.base = []
         self.idcg = []
@@ -39,14 +43,23 @@ class Evaluator:
         result.update(self._calcu_cls_metrics(uid2topk))
         for m in result:
             result[m] = round(result[m], self.precision)
-        return result
+        return result, self._format_str(result)
+
+    def _format_str(self, result):
+        res = ''
+        for metric in self.metrics:
+            res += '\n\t{}:\t{:.4f}'.format(metric, result[metric])
+        return res
 
     def _calcu_ranking_metrics(self, uid2topk):
         result = {}
         for m in ['ndcg', 'map']:
             for k in self.topk:
-                result[f'{m}@{k}'] = self.ranking_metric2func[m](uid2topk, k)
-        result['mrr'] = self._calcu_MRR(uid2topk)
+                metric = f'{m}@{k}'
+                if metric in self.metrics:
+                    result[metric] = self.ranking_metric2func[m](uid2topk, k)
+        if 'mrr' in self.metrics:
+            result['mrr'] = self._calcu_MRR(uid2topk)
         return result
 
     def _calcu_cls_metrics(self, uid2topk):
