@@ -278,7 +278,8 @@ class Trainer(object):
         return best, cur_step, stop_flag, update_flag
 
     @torch.no_grad()
-    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False, save_score=False):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None,
+                 show_progress=False, save_score=False, group='all'):
         """Evaluate the model based on the eval data.
 
         Args:
@@ -288,6 +289,8 @@ class Trainer(object):
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
             show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
+            save_score (bool): Save .score file to running dir if ``True``. Defaults to ``False``.
+            group (str): Which group to evaluate, can be ``all``, ``weak``, ``skilled``.
 
         Returns:
             dict: eval result, key is the eval metric and value in the corresponding metric value
@@ -331,7 +334,7 @@ class Trainer(object):
 
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-        result, result_str = self.evaluator.evaluate(batch_matrix_list)
+        result, result_str = self.evaluator.evaluate(batch_matrix_list, group)
 
         if save_score:
             score_file.close()

@@ -1,3 +1,6 @@
+import os
+from logging import getLogger
+
 import numpy as np
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import log_loss
@@ -5,6 +8,7 @@ from sklearn.metrics import log_loss
 
 class Evaluator:
     def __init__(self, config):
+        self.logger = getLogger()
         self.ranking_metric2func = {
             'ndcg': self._calcu_nDCG,
             'map': self._calcu_MAP,
@@ -26,6 +30,8 @@ class Evaluator:
             else:
                 self.idcg.append(self.base[i])
 
+        self._load_geek2weak(config['dataset_path'])
+
     def collect(self, interaction, scores):
         uid2topk = {}
         scores = scores.cpu().numpy()
@@ -36,8 +42,9 @@ class Evaluator:
             uid2topk[uid].append((scores[i], labels[i]))
         return uid2topk
 
-    def evaluate(self, uid2topk_list):
+    def evaluate(self, uid2topk_list, group='all'):
         uid2topk = self._merge_uid2topk(uid2topk_list)
+        uid2topk = self._filter_group(uid2topk, group)
         result = {}
         result.update(self._calcu_ranking_metrics(uid2topk))
         result.update(self._calcu_cls_metrics(uid2topk))
@@ -112,6 +119,29 @@ class Evaluator:
                     uid2topk[uid] = []
                 uid2topk[uid].extend(single_uid2topk[uid])
         return self._sort_uid2topk(uid2topk)
+
+    def _load_geek2weak(self, dataset_path):
+        self.geek2weak = []
+        filepath = os.path.join(dataset_path, f'geek.weak')
+        self.logger.info(f'Loading {filepath}')
+        with open(filepath, 'r') as file:
+            for line in file:
+                token, weak = line.strip().split('\t')
+                self.geek2weak.append(int(weak))
+
+    def _filter_group(self, uid2topk, group):
+        if group == 'all':
+            return uid2topk
+        elif group in ['weak', 'skilled']:
+            self.logger.info(f'Evaluating on [{group}]')
+            flag = 1 if group == 'weak' else 0
+            new_uid2topk = {}
+            for uid in uid2topk:
+                if abs(self.geek2weak[uid] - flag) < 0.1:
+                    new_uid2topk[uid] = uid2topk[uid]
+            return new_uid2topk
+        else:
+            raise NotImplementedError(f'Not support [{group}]')
 
     def _sort_uid2topk(self, uid2topk):
         for uid in uid2topk:

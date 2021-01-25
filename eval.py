@@ -11,14 +11,15 @@ from utils import init_seed, init_logger, dynamic_load
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', '-f', type=str, help='Model file to test.')
-    parser.add_argument('--phase', '-p', default='test', help='Which phase to evaluate.')
+    parser.add_argument('--phase', '-p', type=str, default='test', help='Which phase to evaluate.')
+    parser.add_argument('--group', '-g', type=str, default='all', help='Which group to evaluate.')
     parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score.')
 
     args = parser.parse_args()
     return args
 
 
-def eval_process(resume_file, phase='test', save=False):
+def eval_process(resume_file, phase='test', group='all', save=False):
     assert phase in ['train', 'test', 'valid']
     checkpoint = torch.load(resume_file)
 
@@ -55,11 +56,11 @@ def eval_process(resume_file, phase='test', save=False):
 
     # model evaluation
     _, eval_result = trainer.evaluate(eval_data, load_best_model=False,
-                                   show_progress=config['show_progress'], save_score=save)
+                                   show_progress=config['show_progress'], save_score=save, group=group)
 
     logger.info('result: {}'.format(eval_result))
 
 
 if __name__ == "__main__":
     args = get_arguments()
-    eval_process(resume_file=args.file, save=args.save)
+    eval_process(resume_file=args.file, group=args.group, save=args.save)
