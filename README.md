@@ -57,36 +57,12 @@ Fine-tuned BERT + MLP
 python main.py -m BERT
 ```
 
-### VPJFv1
-
-* Text Matching: BERT + MLP
-* Intent Modeling:
-    * l_add history (64)
-    * qwd emb pooling
-    * job desc emb pooling
-
-### VPJFv2
-
-* Text Matching: BERT + **Linear**
-* Intent Modeling:
-    * l_add history (64)
-    * qwd emb pooling
-    * job desc emb pooling
-
-### VPJFv3
-
-* Text Matching: BERT + Linear
-* Intent Modeling:
-    * l_add history (64)
-    * qwd emb pooling
-    * job desc emb **self attention**
-
-### VPJFv4
+### VPJFv5
 
 * Text Matching: BERT + Linear
 * Intent Modeling:
     * l_add history (64)
     * qwd emb pooling
     * job desc emb self attention
-* **User Modeling:**
-    * **MF pretrained**
+* User Modeling:
+    * MF pretrained
