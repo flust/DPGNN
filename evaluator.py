@@ -7,7 +7,6 @@ class Evaluator:
     def __init__(self, config):
         self.ranking_metric2func = {
             'ndcg': self._calcu_nDCG,
-            'mrr': self._calcu_MRR,
             'map': self._calcu_MAP,
         }
         self.topk = config['topk']
@@ -44,9 +43,10 @@ class Evaluator:
 
     def _calcu_ranking_metrics(self, uid2topk):
         result = {}
-        for m in ['ndcg', 'mrr', 'map']:
+        for m in ['ndcg', 'map']:
             for k in self.topk:
                 result[f'{m}@{k}'] = self.ranking_metric2func[m](uid2topk, k)
+        result['mrr'] = self._calcu_MRR(uid2topk)
         return result
 
     def _calcu_cls_metrics(self, uid2topk):
@@ -67,10 +67,10 @@ class Evaluator:
             tot += dcg / self.idcg[int(pos) - 1]
         return tot / len(uid2topk)
 
-    def _calcu_MRR(self, uid2topk, k):
+    def _calcu_MRR(self, uid2topk):
         tot = 0
         for uid in uid2topk:
-            for i, (score, lb) in enumerate(uid2topk[uid][:k]):
+            for i, (score, lb) in enumerate(uid2topk[uid]):
                 if lb == 1:
                     tot += 1 / (i + 1)
                     break
