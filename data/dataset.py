@@ -75,11 +75,6 @@ class MFDataset(PJFDataset):
         super(MFDataset, self).__init__(config, pool, phase)
 
 
-class MFwBERTDataset(PJFDataset):
-    def __init__(self, config, pool, phase):
-        super(MFwBERTDataset, self).__init__(config, pool, phase)
-
-
 class BPJFNNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(BPJFNNDataset, self).__init__(config, pool, phase)
