@@ -22,7 +22,6 @@ pin_memory: True
 # General
 checkpoint_dir: ./saved/
 dataset_path: ./dataset/bosszp/
-show_progress: True
 loss_decimal_place: 4
 metric_decimal_place: 4
 

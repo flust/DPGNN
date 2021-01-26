@@ -55,8 +55,8 @@ def eval_process(resume_file, phase='test', group='all', save=False):
     trainer = Trainer(config, model)
 
     # model evaluation
-    _, eval_result = trainer.evaluate(eval_data, load_best_model=False,
-                                   show_progress=config['show_progress'], save_score=save, group=group)
+    eval_result, eval_result_str = trainer.evaluate(eval_data, load_best_model=False,
+                                                    save_score=save, group=group)
 
     logger.info('result: {}'.format(eval_result))
 
