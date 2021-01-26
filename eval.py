@@ -63,4 +63,4 @@ def eval_process(resume_file, phase='test', group='all', save=False):
 
 if __name__ == "__main__":
     args = get_arguments()
-    eval_process(resume_file=args.file, group=args.group, save=args.save)
+    eval_process(resume_file=args.file, phase=args.phase, group=args.group, save=args.save)
