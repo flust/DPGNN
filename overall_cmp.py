@@ -6,7 +6,7 @@ from eval import eval_preparation, eval_process
 
 groups = ['all', 'weak', 'skilled']
 metrics = ['auc', 'map@5', 'map@10', 'mrr']
-methods = ['PJFNN', 'BPJFNN', 'AJFNN', 'BERT', 'MF', 'MV-CoN', 'VPJF']
+methods = ['PJFNN', 'BPJFNN', 'APJFNN', 'BERT', 'MF', 'MV-CoN', 'VPJF']
 pth_dir = './remained'
 hline = [6]
 
