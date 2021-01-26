@@ -168,11 +168,6 @@ class PJFNNPool(PJFPool):
             setattr(self, f'{target}_sents', sents)
 
 
-class BERTPool(PJFPool):
-    def __init__(self, config):
-        super(BERTPool, self).__init__(config)
-
-
 class VPJFPool(BPJFNNPool):
     def __init__(self, config):
         super(VPJFPool, self).__init__(config)
