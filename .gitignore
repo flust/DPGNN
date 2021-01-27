@@ -140,3 +140,4 @@ wandb/
 nohup.out
 *_score/
 assets/
+old*/
