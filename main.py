@@ -34,7 +34,7 @@ def main_process(model, config_dict=None, saved=True):
     init_seed(config['seed'], config['reproducibility'])
     run = wandb.init(
         config=config.params,
-        project='vpjf',
+        project='vpjf-0127',
         name=model if config['name'] is None else config['name'],
         reinit=True,
         mode='disabled'
