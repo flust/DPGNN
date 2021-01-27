@@ -13,7 +13,7 @@ pos_weight: 5.9721
 # Evaluation
 topk: [1, 5, 10]
 valid_metric: AUC
-metrics: [auc, map@5, map@10, mrr]
+metrics: [auc, gauc, map@5, map@10, mrr]
 
 # DataLoader
 num_workers: 4
