@@ -7,7 +7,7 @@ ensembled_methods = ['MF', 'MF', 'BERT']
 params = {
     'topk': [1, 5, 10],
     'metric_decimal_place': 4,
-    'metrics': ['auc', 'map@5', 'map@10', 'mrr']
+    'metrics': ['auc', 'gauc', 'map@5', 'map@10', 'mrr']
 }
 
 evaluator = Evaluator(params)
@@ -15,7 +15,7 @@ evaluator = Evaluator(params)
 
 run = wandb.init(
     config=params,
-    project='vpjf',
+    project='vpjf-0127',
     name='ensemble',
     mode='disabled'
 )

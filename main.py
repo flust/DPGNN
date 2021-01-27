@@ -34,7 +34,7 @@ def main_process(model, config_dict=None, saved=True):
     init_seed(config['seed'], config['reproducibility'])
     run = wandb.init(
         config=config.params,
-        project='vpjf',
+        project='vpjf-0127',
         name=model if config['name'] is None else config['name'],
         reinit=True,
         mode='disabled'
@@ -64,12 +64,10 @@ def main_process(model, config_dict=None, saved=True):
     trainer = Trainer(config, model)
 
     # model training
-    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved,
-                                                      show_progress=config['show_progress'])
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved)
 
     # model evaluation
-    test_result, test_result_str = trainer.evaluate(test_data, load_best_model=saved,
-                                   show_progress=config['show_progress'])
+    test_result, test_result_str = trainer.evaluate(test_data, load_best_model=saved)
     wandb.log(test_result)
 
     logger.info('best valid result: {}'.format(best_valid_result))

@@ -69,13 +69,12 @@ class Trainer(object):
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data, epoch_idx, show_progress=False):
+    def _train_epoch(self, train_data, epoch_idx):
         """Train the model in an epoch
 
         Args:
             train_data (DataLoader): The train data.
             epoch_idx (int): The current epoch id.
-            show_progress (bool): Show progress of epoch training. Defaults to ``False``.
 
         Returns:
             float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
@@ -90,8 +89,6 @@ class Trainer(object):
                 total=len(train_data),
                 desc=f"Train {epoch_idx:>5}",
             )
-            if show_progress
-            else enumerate(train_data)
         )
         for batch_idx, interaction in iter_data:
             interaction = dict2device(interaction, self.device)
@@ -111,18 +108,17 @@ class Trainer(object):
             self.optimizer.step()
         return total_loss
 
-    def _valid_epoch(self, valid_data, show_progress=False):
+    def _valid_epoch(self, valid_data):
         """Valid the model with valid data
 
         Args:
             valid_data (DataLoader): the valid data.
-            show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
 
         Returns:
             float: valid score
             dict: valid result
         """
-        valid_result, valid_result_str = self.evaluate(valid_data, load_best_model=False, show_progress=show_progress)
+        valid_result, valid_result_str = self.evaluate(valid_data, load_best_model=False)
         wandb.log(valid_result)
         valid_score = valid_result[self.valid_metric]
         return valid_score, valid_result, valid_result_str
@@ -181,7 +177,7 @@ class Trainer(object):
             train_loss_output += 'train loss:' + des % losses
         return train_loss_output + ']'
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
         """Train the model based on the train data and the valid data.
 
         Args:
@@ -190,7 +186,6 @@ class Trainer(object):
                                                If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
-            show_progress (bool): Show progress of epoch training and evaluate. Defaults to ``False``.
 
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
@@ -201,7 +196,7 @@ class Trainer(object):
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
+            train_loss = self._train_epoch(train_data, epoch_idx)
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
@@ -219,7 +214,7 @@ class Trainer(object):
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
-                valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data, show_progress=show_progress)
+                valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = self._early_stopping(
                     valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step)
                 valid_end_time = time()
@@ -278,7 +273,8 @@ class Trainer(object):
         return best, cur_step, stop_flag, update_flag
 
     @torch.no_grad()
-    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False, save_score=False):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None,
+                 save_score=False, group='all'):
         """Evaluate the model based on the eval data.
 
         Args:
@@ -287,7 +283,8 @@ class Trainer(object):
                                               It should be set True, if users want to test the model after training.
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
-            show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
+            save_score (bool): Save .score file to running dir if ``True``. Defaults to ``False``.
+            group (str): Which group to evaluate, can be ``all``, ``weak``, ``skilled``.
 
         Returns:
             dict: eval result, key is the eval metric and value in the corresponding metric value
@@ -319,8 +316,6 @@ class Trainer(object):
                 total=len(eval_data),
                 desc=f"Evaluate   ",
             )
-            if show_progress
-            else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
             interaction = batched_data
@@ -331,7 +326,7 @@ class Trainer(object):
 
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-        result, result_str = self.evaluator.evaluate(batch_matrix_list)
+        result, result_str = self.evaluator.evaluate(batch_matrix_list, group)
 
         if save_score:
             score_file.close()

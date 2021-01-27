@@ -73,4 +73,5 @@ python eval.py [-h] [--file FILE] [--phase PHASE] [--save]
 Arguments:
 * `--file FILE`, `-f FILE`  Model file to test.
 * `--phase PHASE`, `-p PHASE` Which phase to evaluate. `PHASE` should be one of `train`, `valid` and `test`. Defaults to `test`.
+* `--group GROUP`, `-g GROUP` Which group to evaluate. `GROUP` should be one of `all`, `weak` and `skilled`. Defaults to `all`.
 * `--save`, `-s` Whether to save predict score. Defaults to not saving.

@@ -8,12 +8,12 @@ epochs: 300
 eval_step: 1
 stopping_step: 5
 clip_grad_norm: ~
-pos_weight: 5.9721
+pos_weight: 7.938
 
 # Evaluation
-topk: [1, 5, 10]
-valid_metric: AUC
-metrics: [auc, map@5, map@10, mrr]
+topk: [5, 10]
+valid_metric: auc
+metrics: [auc, gauc, map@5, map@10, mrr]
 
 # DataLoader
 num_workers: 4
@@ -21,8 +21,7 @@ pin_memory: True
 
 # General
 checkpoint_dir: ./saved/
-dataset_path: ./dataset/bosszp/
-show_progress: True
+dataset_path: ./dataset/bosszp0127/
 loss_decimal_place: 4
 metric_decimal_place: 4
 
