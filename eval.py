@@ -19,7 +19,7 @@ def get_arguments():
     return args
 
 
-def eval_process(resume_file, phase='test', group='all', save=False):
+def eval_preparation(resume_file, phase='test'):
     assert phase in ['train', 'test', 'valid']
     checkpoint = torch.load(resume_file)
 
@@ -53,14 +53,25 @@ def eval_process(resume_file, phase='test', group='all', save=False):
 
     # trainer loading and initialization
     trainer = Trainer(config, model)
+    return trainer, eval_data
 
+
+def eval_process(trainer, eval_data, group='all', save=False):
     # model evaluation
-    _, eval_result = trainer.evaluate(eval_data, load_best_model=False,
-                                   show_progress=config['show_progress'], save_score=save, group=group)
+    eval_result, eval_result_str = trainer.evaluate(eval_data, load_best_model=False,
+                                                    save_score=save, group=group)
 
-    logger.info('result: {}'.format(eval_result))
+    logger = getLogger()
+    logger.info('result: {}'.format(eval_result_str))
+    return eval_result
 
 
 if __name__ == "__main__":
     args = get_arguments()
-    eval_process(resume_file=args.file, phase=args.phase, group=args.group, save=args.save)
+    trainer, eval_data = eval_preparation(resume_file=args.file, phase=args.phase)
+    if len(args.group.split(',')) == 1:
+        eval_process(trainer, eval_data, group=args.group, save=args.save)
+    else:
+        groups = args.group.split(',')
+        for group in groups:
+            eval_process(trainer, eval_data, group=group, save=args.save)
