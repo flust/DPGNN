@@ -34,6 +34,7 @@ class VPJFv6(PJFModel):
         self.intent_modeling_fc = nn.Linear(self.user_embedding_size, self.user_embedding_size)
 
         self.pos_enc = nn.parameter.Parameter(torch.rand(1, self.query_his_len, self.user_embedding_size), requires_grad=True)
+        self.q_pos_enc = nn.parameter.Parameter(torch.rand(1, self.query_his_len, self.user_embedding_size), requires_grad=True)
 
         self.job_desc_attn_layer = nn.Linear(self.wd_embedding_size, 1)
 
@@ -96,6 +97,7 @@ class VPJFv6(PJFModel):
         qwd_his_vec = torch.sum(qwd_his_vec, dim=2) / \
                       qlen_his.unsqueeze(-1)                    # (B, Q, wordD)
         qwd_his_vec = self.wq(qwd_his_vec)                      # (B, Q, idD)
+        qwd_his_vec = self.q_pos_enc + qwd_his_vec
 
         his_len = interaction['his_len']                        # (B)
         key_padding_mask = torch.arange(self.query_his_len, device=his_len.device) \
