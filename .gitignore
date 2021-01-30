@@ -135,9 +135,9 @@ dmypy.json
 dataset/
 log/
 saved/
-remained/
+*remained/
 wandb/
 nohup.out
 *_score/
+*.score
 assets/
-old*/
