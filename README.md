@@ -42,25 +42,14 @@ RNN-based Person-Job Fit Model.
 
 Fine-tuned BERT + MLP
 
-### VPJFv5
+### VPJFv7
 
 * Text Matching: BERT + Linear
 * Intent Modeling:
-    * l_add history (64)
+    * l_add history (64) + Pos Enc
     * qwd emb pooling
     * job desc emb self attention
-* User Modeling:
-    * MF pretrained
-
-### VPJFv6
-
-* Text Matching: BERT + Linear
-* Intent Modeling:
-    * l_add history (64) **+ Pos Enc**
-    * qwd emb pooling
-    * job desc emb self attention
-* User Modeling:
-    * MF pretrained
+* User Modeling
 
 ## Usage
 

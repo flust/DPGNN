@@ -6,14 +6,13 @@ query_his_len: 64
 query_wd_len: 4
 
 # Model
-pretrained_mf_path: remained/MF-Jan-28-2021_02-28-35.pth
 wd_embedding_size: 128
 user_embedding_size: 16
 bert_embedding_size: 768
 hidden_size: 64
 dropout: 0.2
 num_heads: 1
-beta: 0.1
+beta: 1
 
 # Training
 learning_rate: 0.0003
