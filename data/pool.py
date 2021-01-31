@@ -161,11 +161,9 @@ class PJFNNPool(PJFPool):
             self.logger.info(f'Loading {filepath}')
             with open(filepath, 'r', encoding='utf-8') as file:
                 for line in tqdm(file):
-                    #print(line)
                     try:
                         token, sent = line.strip().split('\t')
                     except:
-                        #print(line)
                         continue
                     idx = token2id[token]
                     if idx not in sents:
@@ -221,3 +219,7 @@ class VPJFPool(BPJFNNPool):
 class VPJFv7Pool(VPJFPool):
     def __init__(self, config):
         super(VPJFv7Pool, self).__init__(config)
+
+class APJFNNPool(PJFNNPool):
+    def __init__(self, config):
+        super(APJFNNPool, self).__init__(config)

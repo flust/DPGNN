@@ -4,3 +4,4 @@ from model.BPJFNN import BPJFNN
 from model.BERT import BERT
 from model.PJFNN import PJFNN
 from model.VPJFv7 import VPJFv7
+from model.APJFNN import APJFNN
