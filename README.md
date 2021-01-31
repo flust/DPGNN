@@ -18,6 +18,10 @@ dataset_path/
 
 ## Baseline & Method
 
+### Pop
+
+Scores are calculated by jobs' popularity.
+
 ### MF
 
 Traditional MF Model.

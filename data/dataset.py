@@ -70,6 +70,11 @@ class PJFDataset(Dataset):
         return self.__str__()
 
 
+class PopDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(PopDataset, self).__init__(config, pool, phase)
+
+
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(MFDataset, self).__init__(config, pool, phase)

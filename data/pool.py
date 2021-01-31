@@ -39,6 +39,11 @@ class PJFPool(object):
         return self.__str__()
 
 
+class PopPool(PJFPool):
+    def __init__(self, config):
+        super(PopPool, self).__init__(config)
+
+
 class MFPool(PJFPool):
     def __init__(self, config):
         super(MFPool, self).__init__(config)
