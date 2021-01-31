@@ -5,10 +5,10 @@ from model.abstract import PJFModel
 from model.layer import MLPLayers
 
 
-class VPJFv7(PJFModel):
+class VPJFv8(PJFModel):
     def __init__(self, config, pool):
 
-        super(VPJFv7, self).__init__(config, pool)
+        super(VPJFv8, self).__init__(config, pool)
 
         self.wd_embedding_size = config['wd_embedding_size']
         self.user_embedding_size = config['user_embedding_size']
@@ -28,7 +28,6 @@ class VPJFv7(PJFModel):
         nn.init.xavier_normal_(self.job_emb.weight.data)
 
         self.text_matching_fc = nn.Linear(self.bert_embedding_size, self.hd_size)
-        self.intent_modeling_fc = nn.Linear(self.user_embedding_size, self.user_embedding_size)
 
         self.pos_enc = nn.parameter.Parameter(torch.rand(1, self.query_his_len, self.user_embedding_size), requires_grad=True)
         self.q_pos_enc = nn.parameter.Parameter(torch.rand(1, self.query_his_len, self.user_embedding_size), requires_grad=True)
@@ -37,12 +36,22 @@ class VPJFv7(PJFModel):
 
         self.wq = nn.Linear(self.wd_embedding_size, self.user_embedding_size, bias=False)
 
-        self.attn_layer = nn.MultiheadAttention(
+        self.text_based_attn_layer = nn.MultiheadAttention(
             embed_dim=self.user_embedding_size,
             num_heads=self.num_heads,
             dropout=self.dropout,
             bias=False
         )
+        self.text_based_im_fc = nn.Linear(self.user_embedding_size, self.user_embedding_size)
+
+
+        self.job_emb_attn_layer = nn.MultiheadAttention(
+            embed_dim=self.user_embedding_size,
+            num_heads=self.num_heads,
+            dropout=self.dropout,
+            bias=False
+        )
+        self.job_emb_im_fc = nn.Linear(self.user_embedding_size, self.user_embedding_size)
 
         self.intent_fusion = MLPLayers(
             layers=[self.user_embedding_size * 4, self.hd_size, 1],
@@ -101,15 +110,27 @@ class VPJFv7(PJFModel):
                            .expand(len(his_len), self.query_his_len) \
                            >= his_len.unsqueeze(1)
 
-        intent_vec, _ = self.attn_layer(
+        text_based_intent_vec, _ = self.text_based_attn_layer(
             query=job_desc_vec.unsqueeze(0),
             key=qwd_his_vec.transpose(1, 0),
             value=job_his_vec.transpose(1, 0),
             key_padding_mask=key_padding_mask,
             attn_mask=key_padding_mask.unsqueeze(1)
         )
-        intent_vec = intent_vec.squeeze(0)                      # (B, idD)
-        intent_vec = self.intent_modeling_fc(intent_vec)
+        text_based_intent_vec = text_based_intent_vec.squeeze(0)# (B, idD)
+        text_based_intent_vec = self.text_based_im_fc(text_based_intent_vec)
+
+        job_emb_intent_vec, _ = self.job_emb_attn_layer(
+            query=job_id_vec.unsqueeze(0),
+            key=job_his_vec.transpose(1, 0),
+            value=job_his_vec.transpose(1, 0),
+            key_padding_mask=key_padding_mask,
+            attn_mask=key_padding_mask.unsqueeze(1)
+        )
+        job_emb_intent_vec = job_emb_intent_vec.squeeze(0)      # (B, idD)
+        job_emb_intent_vec = self.job_emb_im_fc(job_emb_intent_vec)
+
+        intent_vec = (1 - self.beta) * text_based_intent_vec + self.beta * job_emb_intent_vec
 
         intent_modeling_vec = self.intent_fusion(
             torch.cat(
@@ -136,7 +157,7 @@ class VPJFv7(PJFModel):
         text_matching_vec = self._text_matching_layer(interaction)
         intent_modeling_vec = self._intent_modeling_layer(interaction)
         mf_vec = self._mf_layer(interaction)
-        score = self.predict_layer([text_matching_vec, self.beta * intent_modeling_vec, mf_vec])
+        score = self.predict_layer([text_matching_vec, intent_modeling_vec, mf_vec])
         return score
 
     def calculate_loss(self, interaction):

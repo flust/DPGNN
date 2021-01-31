@@ -267,6 +267,6 @@ class VPJFDataset(BERTDataset):
         return items
 
 
-class VPJFv7Dataset(VPJFDataset):
+class VPJFv8Dataset(VPJFDataset):
     def __init__(self, config, pool, phase):
-        super(VPJFv7Dataset, self).__init__(config, pool, phase)
+        super(VPJFv8Dataset, self).__init__(config, pool, phase)

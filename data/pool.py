@@ -218,6 +218,6 @@ class VPJFPool(BPJFNNPool):
         ])
 
 
-class VPJFv7Pool(VPJFPool):
+class VPJFv8Pool(VPJFPool):
     def __init__(self, config):
-        super(VPJFv7Pool, self).__init__(config)
+        super(VPJFv8Pool, self).__init__(config)
