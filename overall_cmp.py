@@ -5,10 +5,10 @@ from eval import eval_preparation, eval_process
 
 
 groups = ['all', 'weak', 'skilled']
-metrics = ['gauc', 'map@5', 'map@10', 'mrr']
-methods = ['PJFNN', 'BPJFNN', 'APJFNN', 'BERT', 'MF', 'MV-CoN', 'VPJF']
+metrics = ['gauc', 'p@5', 'r@5', 'mrr']
+methods = ['Pop', 'MF', 'PJFNN', 'BPJFNN', 'APJFNN', 'BERT', 'MV-CoN', 'VPJF']
 pth_dir = './remained'
-hline = [6]
+hline = [2, 7]
 
 
 model_filenames = os.listdir(pth_dir)
