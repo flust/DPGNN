@@ -70,6 +70,11 @@ class PJFDataset(Dataset):
         return self.__str__()
 
 
+class PopDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(PopDataset, self).__init__(config, pool, phase)
+
+
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(MFDataset, self).__init__(config, pool, phase)
@@ -262,9 +267,9 @@ class VPJFDataset(BERTDataset):
         return items
 
 
-class VPJFv5Dataset(VPJFDataset):
+class VPJFv7Dataset(VPJFDataset):
     def __init__(self, config, pool, phase):
-        super(VPJFv5Dataset, self).__init__(config, pool, phase)
+        super(VPJFv7Dataset, self).__init__(config, pool, phase)
 
 class APJFNNDataset(PJFNNDataset):
     def __init__(self, config, pool, phase):

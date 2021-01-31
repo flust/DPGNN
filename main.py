@@ -65,13 +65,18 @@ def main_process(model, config_dict=None, saved=True):
 
     # model training
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved)
+    logger.info('best valid result: {}'.format(best_valid_result))
 
     # model evaluation
     test_result, test_result_str = trainer.evaluate(test_data, load_best_model=saved)
     wandb.log(test_result)
+    logger.info('test result [all]: {}'.format(test_result_str))
 
-    logger.info('best valid result: {}'.format(best_valid_result))
-    logger.info('test result: {}'.format(test_result_str))
+    test_result_weak, test_result_weak_str = trainer.evaluate(test_data, load_best_model=saved, group='weak')
+    logger.info('test result [weak]: {}'.format(test_result_weak_str))
+
+    test_result_skilled, test_result_skilled_str = trainer.evaluate(test_data, load_best_model=saved, group='skilled')
+    logger.info('test result [skilled]: {}'.format(test_result_skilled_str))
 
     run.finish()
 
