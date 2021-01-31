@@ -9,17 +9,18 @@ from sklearn.metrics import log_loss
 class Evaluator:
     def __init__(self, config):
         self.logger = getLogger()
-        self.ranking_metric2func = {
+        self.metric2func = {
             'ndcg': self._calcu_nDCG,
             'map': self._calcu_MAP,
+            'p': self._calcu_Precision,
+            'r': self._calcu_Recall,
+            'auc': roc_auc_score,
+            'logloss': log_loss,
         }
         self.topk = config['topk']
         self.maxtopk = max(self.topk)
         self.precision = config['metric_decimal_place']
-        if config['metrics'] is not None:
-            self.metrics = config['metrics']
-        else:
-            self.metrics = ['auc', 'gauc', 'map@5', 'map@10', 'mrr']
+        self.metrics = ['gauc', 'p@5', 'r@5', 'mrr']
 
         self.base = []
         self.idcg = []
@@ -61,11 +62,11 @@ class Evaluator:
 
     def _calcu_ranking_metrics(self, uid2topk):
         result = {}
-        for m in ['ndcg', 'map']:
+        for m in ['ndcg', 'map', 'p', 'r']:
             for k in self.topk:
                 metric = f'{m}@{k}'
                 if metric in self.metrics:
-                    result[metric] = self.ranking_metric2func[m](uid2topk, k)
+                    result[metric] = self.metric2func[m](uid2topk, k)
         if 'mrr' in self.metrics:
             result['mrr'] = self._calcu_MRR(uid2topk)
         return result
@@ -73,9 +74,11 @@ class Evaluator:
     def _calcu_cls_metrics(self, uid2topk):
         scores, labels = self._flatten_cls_list(uid2topk)
         result = {}
-        result['auc'] = roc_auc_score(labels, scores)
-        result['logloss'] = log_loss(labels, scores)
-        result['gauc'] = self._calcu_GAUC(uid2topk)
+        for m in ['auc', 'logloss']:
+            if m in self.metrics:
+                result[m] = self.metric2func[m](labels, scores)
+        if 'gauc' in self.metrics:
+            result['gauc'] = self._calcu_GAUC(uid2topk)
         return result
 
     def _calcu_GAUC(self, uid2topk):
@@ -99,6 +102,29 @@ class Evaluator:
                 dcg += lb * self.base[i]
                 pos += lb
             tot += dcg / self.idcg[int(pos) - 1]
+        return tot / len(uid2topk)
+
+    def _calcu_Precision(self, uid2topk, k):
+        tot = 0
+        for uid in uid2topk:
+            rec = 0
+            rel = 0
+            for i, (score, lb) in enumerate(uid2topk[uid][:k]):
+                rec += 1
+                rel += lb
+            tot += rel / rec
+        return tot / len(uid2topk)
+
+    def _calcu_Recall(self, uid2topk, k):
+        tot = 0
+        for uid in uid2topk:
+            rec = 0
+            rel = 0
+            for i, (score, lb) in enumerate(uid2topk[uid]):
+                if i < k:
+                    rec += lb
+                rel += lb
+            tot += rec / rel
         return tot / len(uid2topk)
 
     def _calcu_MRR(self, uid2topk):
