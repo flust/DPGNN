@@ -13,6 +13,7 @@ hidden_size: 64
 dropout: 0.2
 num_heads: 1
 beta: 0.2
+k: 8
 
 # Training
 learning_rate: 0.0003

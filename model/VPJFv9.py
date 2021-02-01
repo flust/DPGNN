@@ -5,10 +5,10 @@ from model.abstract import PJFModel
 from model.layer import MLPLayers
 
 
-class VPJFv8(PJFModel):
+class VPJFv9(PJFModel):
     def __init__(self, config, pool):
 
-        super(VPJFv8, self).__init__(config, pool)
+        super(VPJFv9, self).__init__(config, pool)
 
         self.wd_embedding_size = config['wd_embedding_size']
         self.user_embedding_size = config['user_embedding_size']
@@ -20,6 +20,7 @@ class VPJFv8(PJFModel):
         self.max_job_longsent_len = config['job_longsent_len']
         self.pretrained_mf_path = config['pretrained_mf_path']
         self.beta = config['beta']
+        self.k = config['k']
 
         self.emb = nn.Embedding(pool.wd_num, self.wd_embedding_size, padding_idx=0)
         self.geek_emb = nn.Embedding(self.geek_num, self.user_embedding_size, padding_idx=0)
@@ -35,6 +36,8 @@ class VPJFv8(PJFModel):
         self.job_desc_attn_layer = nn.Linear(self.wd_embedding_size, 1)
 
         self.wq = nn.Linear(self.wd_embedding_size, self.user_embedding_size, bias=False)
+        self.text_based_lfc = nn.Linear(self.query_his_len, self.k, bias=False)
+        self.job_emb_lfc = nn.Linear(self.query_his_len, self.k, bias=False)
 
         self.text_based_attn_layer = nn.MultiheadAttention(
             embed_dim=self.user_embedding_size,
@@ -105,27 +108,22 @@ class VPJFv8(PJFModel):
         qwd_his_vec = self.wq(qwd_his_vec)                      # (B, Q, idD)
         qwd_his_vec = self.q_pos_enc + qwd_his_vec
 
-        his_len = interaction['his_len']                        # (B)
-        key_padding_mask = torch.arange(self.query_his_len, device=his_len.device) \
-                           .expand(len(his_len), self.query_his_len) \
-                           >= his_len.unsqueeze(1)
-
+        proj_qwd_his_vec = self.text_based_lfc(qwd_his_vec.transpose(2, 1)).transpose(2, 1) * self.k / self.query_his_len
+                                                                # (B, K, idD)
+        proj_job_his_vec = self.job_emb_lfc(job_his_vec.transpose(2, 1)).transpose(2, 1) * self.k / self.query_his_len
+                                                                # (B, K, idD)
         text_based_intent_vec, _ = self.text_based_attn_layer(
             query=job_desc_vec.unsqueeze(0),
-            key=qwd_his_vec.transpose(1, 0),
-            value=job_his_vec.transpose(1, 0),
-            key_padding_mask=key_padding_mask,
-            attn_mask=key_padding_mask.unsqueeze(1)
+            key=proj_qwd_his_vec.transpose(1, 0),
+            value=proj_job_his_vec.transpose(1, 0)
         )
         text_based_intent_vec = text_based_intent_vec.squeeze(0)# (B, idD)
         text_based_intent_vec = self.text_based_im_fc(text_based_intent_vec)
 
         job_emb_intent_vec, _ = self.job_emb_attn_layer(
             query=job_id_vec.unsqueeze(0),
-            key=job_his_vec.transpose(1, 0),
-            value=job_his_vec.transpose(1, 0),
-            key_padding_mask=key_padding_mask,
-            attn_mask=key_padding_mask.unsqueeze(1)
+            key=proj_job_his_vec.transpose(1, 0),
+            value=proj_job_his_vec.transpose(1, 0),
         )
         job_emb_intent_vec = job_emb_intent_vec.squeeze(0)      # (B, idD)
         job_emb_intent_vec = self.job_emb_im_fc(job_emb_intent_vec)
