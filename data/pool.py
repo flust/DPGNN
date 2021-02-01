@@ -124,6 +124,7 @@ class BPJFNNPool(PJFPool):
             f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
 
+
 class PJFNNPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
@@ -161,11 +162,9 @@ class PJFNNPool(PJFPool):
             self.logger.info(f'Loading {filepath}')
             with open(filepath, 'r', encoding='utf-8') as file:
                 for line in tqdm(file):
-                    #print(line)
                     try:
                         token, sent = line.strip().split('\t')
                     except:
-                        #print(line)
                         continue
                     idx = token2id[token]
                     if idx not in sents:
@@ -176,6 +175,11 @@ class PJFNNPool(PJFPool):
                     sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))
                     sent_num[idx] += 1
             setattr(self, f'{target}_sents', sents)
+
+
+class APJFNNPool(PJFNNPool):
+    def __init__(self, config):
+        super(APJFNNPool, self).__init__(config)
 
 
 class VPJFPool(BPJFNNPool):

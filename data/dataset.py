@@ -124,6 +124,11 @@ class PJFNNDataset(PJFDataset):
         }
 
 
+class APJFNNDataset(PJFNNDataset):
+    def __init__(self, config, pool, phase):
+        super(APJFNNDataset, self).__init__(config, pool, phase)
+
+
 class BERTDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(BERTDataset, self).__init__(config, pool, phase)
