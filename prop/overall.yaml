@@ -20,7 +20,7 @@ pin_memory: True
 
 # General
 checkpoint_dir: ./saved/
-dataset_path: ./dataset/bosszp0127/
+dataset_path: ./dataset/bosszp0203/
 loss_decimal_place: 4
 metric_decimal_place: 4
 

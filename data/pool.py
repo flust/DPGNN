@@ -108,7 +108,13 @@ class BPJFNNPool(PJFPool):
             self.logger.info(f'Loading {filepath}')
             with open(filepath, 'r', encoding='utf-8') as file:
                 for line in tqdm(file):
-                    token, longsent = line.strip().split('\t')
+                    try:
+                        token, longsent = line.strip().split('\t')
+                    except:
+                        token = line.strip()
+                        longsent = '[WD_PAD]'
+                    if token not in token2id:
+                        continue
                     idx = token2id[token]
                     longsent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in longsent.split(' ')])
                     id2longsent[idx] = F.pad(longsent, (0, max_sent_len - longsent.shape[0]))
@@ -165,6 +171,8 @@ class PJFNNPool(PJFPool):
                     try:
                         token, sent = line.strip().split('\t')
                     except:
+                        continue
+                    if token not in token2id:
                         continue
                     idx = token2id[token]
                     if idx not in sents:
