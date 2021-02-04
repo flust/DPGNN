@@ -2,30 +2,39 @@ import os
 from collections import defaultdict
 
 from eval import eval_preparation, eval_process
+from eval_by_score import eval_all
 
 
 groups = ['all', 'weak', 'skilled']
 metrics = ['gauc', 'p@5', 'r@5', 'mrr']
 methods = ['Pop', 'MF', 'PJFNN', 'BPJFNN', 'APJFNN', 'BERT', 'MV-CoN', 'VPJF']
+method_with_scores = {'MV-CoN'}
 pth_dir = './remained'
 hline = [2, 7]
+prefix = ' ' * 8
 
 
 model_filenames = os.listdir(pth_dir)
 method2res = defaultdict(list)
 for meth in methods:
-    pth_file = None
-    for filename in model_filenames:
-        if filename[:len(meth)] == meth:
-            pth_file = os.path.join(pth_dir, filename)
-            break
-    print(f'{meth} -> {pth_file}', flush=True)
-    if pth_file is not None:
-        trainer, eval_data = eval_preparation(resume_file=pth_file)
-        for group in groups:
-            res = eval_process(trainer, eval_data, group=group)
-            for metric in metrics:
-                method2res[meth].append(res[metric])
+    if meth in method_with_scores:
+        res_all, res_weak, res_skilled = eval_all(model=meth)
+        method2res[meth] = []
+        for group, res in zip(groups, [res_all, res_weak, res_skilled]):
+            method2res[meth].extend([res[_] for _ in metrics])
+    else:
+        pth_file = None
+        for filename in model_filenames:
+            if filename[:len(meth)] == meth:
+                pth_file = os.path.join(pth_dir, filename)
+                break
+        print(f'{meth} -> {pth_file}', flush=True)
+        if pth_file is not None:
+            trainer, eval_data = eval_preparation(resume_file=pth_file)
+            for group in groups:
+                res = eval_process(trainer, eval_data, group=group)
+                for metric in metrics:
+                    method2res[meth].append(res[metric])
 
 col_num = len(metrics) * len(groups)
 best_vals = []
@@ -38,7 +47,7 @@ for i in range(col_num):
 
 for i, meth in enumerate(methods):
     if i in hline:
-        print('\hline')
+        print(f'{prefix}\hline')
     str_lst = [meth]
     if len(method2res[meth]) == 0:
         str_lst.extend(['-'] * col_num)
@@ -48,7 +57,7 @@ for i, meth in enumerate(methods):
                 str_lst.append('\\bm{$' + '{:.4f}'.format(val) + '$}')
             else:
                 str_lst.append('${:.4f}$'.format(val))
-    print(' & '.join(str_lst) + ' \\\\')
+    print(prefix + ' & '.join(str_lst) + ' \\\\')
 
 if len(methods) in hline:
-    print('\hline')
+    print(f'{prefix}\hline')
