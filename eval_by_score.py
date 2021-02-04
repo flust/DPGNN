@@ -5,7 +5,7 @@ from evaluator import Evaluator
 
 
 params = {
-    'dataset_path': './dataset/bosszp0127/',
+    'dataset_path': './dataset/bosszp0203/',
     'topk': [5],
     'metric_decimal_place': 4,
     'metrics': ['gauc', 'p@5', 'r@5', 'mrr']

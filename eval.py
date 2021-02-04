@@ -24,6 +24,7 @@ def eval_preparation(resume_file, phase='test'):
     checkpoint = torch.load(resume_file)
 
     config = checkpoint['config']
+    config.params['dataset_path'] = './dataset/bosszp0203/'
     init_seed(config['seed'], config['reproducibility'])
 
     # logger initialization
