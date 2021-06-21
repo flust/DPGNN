@@ -7,12 +7,9 @@ import torch
 
 class Config(object):
     """ Configurator module that load the defined parameters.
-
     Configurator module will first load parameters from ``prop/overall.yaml`` and ``prop/[model].yaml``,
     then load parameters from ``config_dict``
-
     The priority order is as following:
-
     config dict > yaml config file
     """
 

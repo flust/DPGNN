@@ -10,6 +10,7 @@ import wandb
 
 from utils import ensure_dir, get_local_time, dict2device
 from evaluator import Evaluator
+import pdb
 
 
 class Trainer(object):
@@ -63,7 +64,7 @@ class Trainer(object):
         }
 
         if self.learner in opt2method:
-            optimizer = opt2method[self.learner](self.model.parameters(), lr=self.learning_rate)
+            optimizer = opt2method[self.learner](filter(lambda p: p.requires_grad, self.model.parameters()), lr=self.learning_rate)
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -214,6 +215,7 @@ class Trainer(object):
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
+
                 valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = self._early_stopping(
                     valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step)
@@ -274,7 +276,7 @@ class Trainer(object):
 
     @torch.no_grad()
     def evaluate(self, eval_data, load_best_model=True, model_file=None,
-                 save_score=False, group='all'):
+                 save_score=False, group='all', reverse=False):
         """Evaluate the model based on the eval data.
 
         Args:
@@ -317,14 +319,17 @@ class Trainer(object):
                 desc=f"Evaluate   ",
             )
         )
+
         for batch_idx, batched_data in iter_data:
             interaction = batched_data
+            # pdb.set_trace()
+
             scores = self.model.predict(dict2device(interaction, self.device))
             if save_score:
                 for s in scores.cpu().numpy():
                     score_file.write(f'{s}\n')
 
-            batch_matrix = self.evaluator.collect(interaction, scores)
+            batch_matrix = self.evaluator.collect(interaction, scores, reverse)
             batch_matrix_list.append(batch_matrix)
         result, result_str = self.evaluator.evaluate(batch_matrix_list, group)
 

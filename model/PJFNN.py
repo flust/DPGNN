@@ -34,7 +34,7 @@ class TextCNN(nn.Module):
         return x
 
 class PJFNN(PJFModel):
-    def __init__(self, config, pool):
+    def __init__(self, config, pool, data_set):
         super(PJFNN, self).__init__(config, pool)
         self.embedding_size = config['embedding_size']
         self.geek_channels = config['geek_max_sent_num'] #20

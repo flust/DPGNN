@@ -1,0 +1,15 @@
+accum: "stack"
+gcn_output_dim: 500
+dropout_prob: 0.3
+sparse_feature: True
+class_num: 2
+num_basis_functions: 2
+
+# Model
+embedding_size: 16
+# Training
+learning_rate: 0.001
+
+# General
+train_batch_size: 4096
+eval_batch_size: 4096

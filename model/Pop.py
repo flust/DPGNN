@@ -4,11 +4,11 @@ from model.abstract import PJFModel
 
 
 class Pop(PJFModel):
-    def __init__(self, config, pool):
+    def __init__(self, config, pool, dataset):
         super(Pop, self).__init__(config, pool)
 
         self.item_cnt = torch.nn.Parameter(
-            torch.zeros(pool.job_num, 1, dtype=torch.long, device=self.device),
+            torch.zeros(pool.geek_num, 1, dtype=torch.long, device=self.device),
             requires_grad=False
         )
         self.max_cnt = torch.nn.Parameter(

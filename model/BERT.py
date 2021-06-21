@@ -7,7 +7,7 @@ from model.layer import MLPLayers
 
 
 class BERT(PJFModel):
-    def __init__(self, config, pool):
+    def __init__(self, config, pool, dataset):
 
         super(BERT, self).__init__(config, pool)
 
@@ -15,10 +15,12 @@ class BERT(PJFModel):
         self.hd_size = config['hidden_size']
         self.dropout = config['dropout']
 
-        self.mlp = MLPLayers(
-            layers=[self.embedding_size, self.hd_size, 1],
-            dropout=self.dropout,
-            activation='tanh'
+        self.mlp = nn.Sequential(
+            nn.Linear(self.embedding_size, self.hd_size),
+            nn.BatchNorm1d(num_features=self.hd_size),
+            nn.Sigmoid(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(self.hd_size, 1)
         )
 
         self.sigmoid = nn.Sigmoid()

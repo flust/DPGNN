@@ -6,7 +6,7 @@ from model.abstract import PJFModel
 
 
 class MF(PJFModel):
-    def __init__(self, config, pool):
+    def __init__(self, config, pool, dataset):
 
         super(MF, self).__init__(config, pool)
 
@@ -35,9 +35,9 @@ class MF(PJFModel):
         geek_vec = self.geek_emb(geek_id)
         job_vec = self.job_emb(job_id)
         score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) \
-            + self.geek_b(geek_id).squeeze() \
-            + self.job_b(job_id).squeeze() \
-            + self.miu
+            # + self.geek_b(geek_id).squeeze() \
+            # + self.job_b(job_id).squeeze() \
+            # + self.miu
         return score
 
     def calculate_loss(self, interaction):

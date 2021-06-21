@@ -1,0 +1,21 @@
+# GCN part
+embedding_size: 128
+# GCN_embedding_size: 128
+GCN_layers: 3
+
+# BERT part
+BERT_embedding_size: 768
+BERT_hidden_size: 256
+BERT_dropout: 0.2
+# BERT_output_size: 256
+
+# FUSION part
+# fusion_layer_size: 256
+
+# Training
+learning_rate: 0.0003
+
+# General
+train_batch_size: 4096
+eval_batch_size: 4096
+

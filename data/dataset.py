@@ -6,20 +6,37 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from scipy.sparse import coo_matrix
 
 from utils import dynamic_load
 
 
 def create_datasets(config, pool):
+    data_list = []
+    if config['direction'] == 'geek':
+        # train model on user data 
+        data_list.extend(['train_g', 'valid_g', 'test_g'])
+    elif config['direction'] == 'job':
+        # job: train model on job data 
+        data_list.extend(['train_j', 'valid_j', 'test_j'])
+    else:
+        # others: train model on full data
+        data_list.extend(['train_all', 'valid_g', 'test_g'])
+    
+    # test set for geek & test set for job
+    data_list.extend(['test_g', 'test_j'])
+
+    # graph build dataset (geek / job)
+    data_list.extend(['train_g', 'train_j'])
+    data_list.extend(['user_add','job_add'])
     return [
         dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, phase)
-        for phase in ['train', 'valid', 'test']
+        for phase in data_list
     ]
 
 
 class PJFDataset(Dataset):
     def __init__(self, config, pool, phase):
-        assert phase in ['train', 'test', 'valid']
         super(PJFDataset, self).__init__()
         self.config = config
         self.phase = phase
@@ -27,6 +44,11 @@ class PJFDataset(Dataset):
 
         self._init_attributes(pool)
         self._load_inters()
+
+        src = self.geek_ids[self.labels == 1]
+        tgt = self.job_ids[self.labels == 1]
+        data = self.labels[self.labels == 1]
+        self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
 
     def _init_attributes(self, pool):
         self.geek_num = pool.geek_num
@@ -41,7 +63,8 @@ class PJFDataset(Dataset):
         self.geek_ids, self.job_ids, self.labels = [], [], []
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in tqdm(file):
-                geek_token, job_token, ts, label = line.strip().split('\t')
+                # geek_token, job_token, ts, label = line.strip().split('\t')
+                geek_token, job_token, label = line.strip().split('\t')[:3]
                 geek_id = self.geek_token2id[geek_token]
                 self.geek_ids.append(geek_id)
                 job_id = self.job_token2id[job_token]
@@ -79,6 +102,24 @@ class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(MFDataset, self).__init__(config, pool, phase)
 
+class NCFDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(NCFDataset, self).__init__(config, pool, phase)
+
+class MultiMFDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiMFDataset, self).__init__(config, pool, phase)
+
+
+class LightGCNDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(LightGCNDataset, self).__init__(config, pool, phase)
+
+
+class MultiGCNDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGCNDataset, self).__init__(config, pool, phase)
+
 
 class BPJFNNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
@@ -98,6 +139,7 @@ class BPJFNNDataset(PJFDataset):
             'geek_id': geek_id,
             'geek_longsent': self.geek_id2longsent[geek_id],
             'geek_longsent_len': self.geek_id2longsent_len[geek_id],
+            'job_id': job_id,
             'job_longsent': self.job_id2longsent[job_id],
             'job_longsent_len': self.job_id2longsent_len[job_id],
             'label': self.labels[index]
@@ -123,7 +165,6 @@ class PJFNNDataset(PJFDataset):
             'label': self.labels[index]
         }
 
-
 class APJFNNDataset(PJFNNDataset):
     def __init__(self, config, pool, phase):
         super(APJFNNDataset, self).__init__(config, pool, phase)
@@ -135,14 +176,23 @@ class BERTDataset(PJFDataset):
 
     def _load_inters(self):
         super(BERTDataset, self)._load_inters()
-        bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
-        self.logger.info(f'Loading from {bert_filepath}')
-        self.bert_vec = torch.FloatTensor(np.load(bert_filepath).astype(np.float32))
-        assert self.labels.shape[0] == self.bert_vec.shape[0]
+        if self.phase[-3:] != 'add':
+            bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+            self.logger.info(f'Loading from {bert_filepath}')
+            self.bert_vec = torch.FloatTensor(np.load(bert_filepath).astype(np.float32))
+            assert self.labels.shape[0] == self.bert_vec.shape[0]
 
     def __getitem__(self, index):
+        if self.phase[-3:] == 'add':
+            return {
+                'geek_id': self.geek_ids[index],
+                'job_id': self.job_ids[index],
+                'bert_vec': None,
+                'label': self.labels[index]               
+            }
         return {
             'geek_id': self.geek_ids[index],
+            'job_id': self.job_ids[index],
             'bert_vec': self.bert_vec[index],
             'label': self.labels[index]
         }
@@ -152,6 +202,11 @@ class BERTDataset(PJFDataset):
             super(BERTDataset, self).__str__(),
             f'bert_vec: {self.bert_vec.shape}'
         ])
+
+
+class MultiPJFDataset(BERTDataset):
+    def __init__(self, config, pool, phase):
+        super(BERTDataset, self).__init__(config, pool, phase)
 
 
 class RawVPJFDataset(PJFDataset):

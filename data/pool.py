@@ -48,6 +48,26 @@ class MFPool(PJFPool):
     def __init__(self, config):
         super(MFPool, self).__init__(config)
 
+class NCFPool(PJFPool):
+    def __init__(self, config):
+        super(NCFPool, self).__init__(config)
+
+class MultiMFPool(PJFPool):
+    def __init__(self, config):
+        super(MultiMFPool, self).__init__(config)
+
+
+class LightGCNPool(PJFPool):
+    def __init__(self, config):
+        super(LightGCNPool, self).__init__(config)
+
+
+class MultiGCNPool(PJFPool):
+    def __init__(self, config):
+        super(MultiGCNPool, self).__init__(config)
+    
+    
+
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):
@@ -72,6 +92,11 @@ class SingleBERTPool(PJFPool):
 class BERTPool(PJFPool):
     def __init__(self, config):
         super(BERTPool, self).__init__(config)
+
+
+class MultiPJFPool(PJFPool):
+    def __init__(self, config):
+        super(MultiPJFPool, self).__init__(config)
 
 
 class BPJFNNPool(PJFPool):
@@ -130,7 +155,6 @@ class BPJFNNPool(PJFPool):
             f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
 
-
 class PJFNNPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
@@ -183,7 +207,7 @@ class PJFNNPool(PJFPool):
                     sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))
                     sent_num[idx] += 1
             setattr(self, f'{target}_sents', sents)
-
+            
 
 class APJFNNPool(PJFNNPool):
     def __init__(self, config):

@@ -1,7 +1,7 @@
 import argparse
 from logging import getLogger
-
 import wandb
+import os
 
 from config import Config
 from data.dataset import create_datasets
@@ -9,12 +9,16 @@ from data.dataloader import construct_dataloader
 from trainer import Trainer
 from utils import init_seed, init_logger, dynamic_load
 
-
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', '-m', type=str, help='Model to test.')
+    parser.add_argument('--model', '-m', type=str, help='Model to test.', default='BGPJF')
     parser.add_argument('--name', '-n', type=str, help='Name of this run.')
-
+    parser.add_argument('--direction', '-d', type=str, help='direction to evaluate', default='multi')
+    parser.add_argument('--embedding_size', '-es', type=int, help='embedding size', default=256)
+    parser.add_argument('--learning_rate', '-lr', type=float, help='learning rate', default=0.00001)
+    parser.add_argument('--dropout', '-do', type=float, help='dropout', default=0.2)
+    parser.add_argument('--gpu_id', '-g', type=int, help='gpu_id', default=1)
+    parser.add_argument('--n_layers', '-nl', type=int, help='n_layers', default=2)
     args = parser.parse_args()
     return args
 
@@ -53,30 +57,40 @@ def main_process(model, config_dict=None, saved=True):
     for ds in datasets:
         logger.info(ds)
 
-    train_data, valid_data, test_data = construct_dataloader(config, datasets)
+    # load dataset
+    train_data, valid_data, test_data, test_data_g, test_data_j = construct_dataloader(config, datasets)
 
+    data_sets = datasets[0]
+    if config['model'] == 'MultiGCN' or config['model'] == 'MultiPJF':
+        data_sets = {'train_g':datasets[-4],
+                    'train_j':datasets[-3],
+                    'add_user':datasets[-2],
+                    'add_job':datasets[-1]
+        }
+        
     # model loading and initialization
-    model = dynamic_load(config, 'model')(config, pool).to(config['device'])
+    model = dynamic_load(config, 'model')(config, pool, data_sets).to(config['device'])
+    # print(os.environ["CUDA_VISIBLE_DEVICES"])
+
     logger.info(model)
     wandb.watch(model, model.loss, log="all", log_freq=100)
 
     # trainer loading and initialization
     trainer = Trainer(config, model)
-
+    
     # model training
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved)
     logger.info('best valid result: {}'.format(best_valid_result))
 
-    # model evaluation
-    test_result, test_result_str = trainer.evaluate(test_data, load_best_model=saved)
+    # model evaluation for user
+    test_result, test_result_str = trainer.evaluate(test_data_g, load_best_model=True)
     wandb.log(test_result)
-    logger.info('test result [all]: {}'.format(test_result_str))
+    logger.info('test for user result [all]: {}'.format(test_result_str))
 
-    test_result_weak, test_result_weak_str = trainer.evaluate(test_data, load_best_model=saved, group='weak')
-    logger.info('test result [weak]: {}'.format(test_result_weak_str))
-
-    test_result_skilled, test_result_skilled_str = trainer.evaluate(test_data, load_best_model=saved, group='skilled')
-    logger.info('test result [skilled]: {}'.format(test_result_skilled_str))
+    # model evaluation for job
+    test_result, test_result_str = trainer.evaluate(test_data_j, load_best_model=True, reverse=True)
+    wandb.log(test_result)
+    logger.info('test for job result [all]: {}'.format(test_result_str))
 
     run.finish()
 
@@ -88,7 +102,13 @@ def main_process(model, config_dict=None, saved=True):
 
 
 if __name__ == "__main__":
-    args = get_arguments()
+    args = get_arguments()    
     main_process(model=args.model, config_dict={
-        'name': args.name
+        'name': args.name,
+        'direction': args.direction,
+        'embedding_size': args.embedding_size,
+        'learning_rate': args.learning_rate,
+        'dropout': args.dropout,
+        'gpu_id': args.gpu_id,
+        'n_layers': args.n_layers
     })

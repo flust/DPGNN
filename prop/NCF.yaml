@@ -1,0 +1,16 @@
+# Model
+embedding_size: 64
+mf_embedding_size: 64
+mlp_embedding_size: 64
+mlp_hidden_size: [64,32]
+mf_train: True
+mlp_train: True
+
+dropout: 0.2
+
+# Training
+learning_rate: 0.00001
+
+# General
+train_batch_size: 4096
+eval_batch_size: 4096

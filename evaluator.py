@@ -4,7 +4,7 @@ from logging import getLogger
 import numpy as np
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import log_loss
-
+import pdb
 
 class Evaluator:
     def __init__(self, config):
@@ -31,13 +31,17 @@ class Evaluator:
             else:
                 self.idcg.append(self.base[i])
 
-        self._load_geek2weak(config['dataset_path'])
+        #self._load_geek2weak(config['dataset_path'])
 
-    def collect(self, interaction, scores):
+    def collect(self, interaction, scores, reverse=False):
         uid2topk = {}
         scores = scores.cpu().numpy()
         labels = interaction['label'].numpy()
-        for i, uid in enumerate(interaction['geek_id'].numpy()):
+        if reverse:
+            actor = 'job_id'
+        else: 
+            actor = 'geek_id'
+        for i, uid in enumerate(interaction[actor].numpy()):
             if uid not in uid2topk:
                 uid2topk[uid] = []
             uid2topk[uid].append((scores[i], labels[i]))
@@ -50,6 +54,8 @@ class Evaluator:
         result = {}
         result.update(self._calcu_ranking_metrics(uid2topk))
         result.update(self._calcu_cls_metrics(uid2topk))
+        # pdb.set_trace()
+
         for m in result:
             result[m] = round(result[m], self.precision)
         return result, self._format_str(result)
@@ -186,15 +192,16 @@ class Evaluator:
             self.logger.info(f'Evaluating on [{group}]')
             flag = 1 if group == 'weak' else 0
             new_uid2topk = {}
-            for uid in uid2topk:
-                if abs(self.geek2weak[uid] - flag) < 0.1:
-                    new_uid2topk[uid] = uid2topk[uid]
+            # for uid in uid2topk:
+            #     if abs(self.geek2weak[uid] - flag) < 0.1:
+            #         new_uid2topk[uid] = uid2topk[uid]
             return new_uid2topk
         else:
             raise NotImplementedError(f'Not support [{group}]')
 
     def _sort_uid2topk(self, uid2topk):
         for uid in uid2topk:
+            uid2topk[uid].sort(key=lambda t: t[1], reverse=False)
             uid2topk[uid].sort(key=lambda t: t[0], reverse=True)
         return uid2topk
 

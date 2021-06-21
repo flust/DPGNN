@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.nn.init import normal_
+from torch_geometric.nn import MessagePassing
+from torch_geometric.utils import add_self_loops, degree
 
 
 class MLPLayers(nn.Module):
@@ -125,3 +127,21 @@ class FusionLayer(nn.Module):
         a = self._single_layer(a, b)
         b = self._single_layer(b, a)
         return torch.cat([a, b], dim=-1)
+
+
+class GCNConv(MessagePassing):
+    # This part follows the official website of geometric
+    def __init__(self, in_channels, out_channels):
+        super(GCNConv, self).__init__(aggr='add') 
+
+    def forward(self, x, edge_index):
+        # add self loops
+        edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))
+        row, col = edge_index
+        deg = degree(col, x.size(0), dtype=x.dtype)
+        deg_inv_sqrt = deg.pow(-0.5)
+        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
+        return self.propagate(edge_index, x=x, norm=norm)
+
+    def message(self, x_j, norm):
+        return norm.view(-1, 1) * x_j

@@ -7,7 +7,7 @@ from model.layer import MLPLayers
 
 
 class BPJFNN(PJFModel):
-    def __init__(self, config, pool):
+    def __init__(self, config, pool, data_sets):
 
         super(BPJFNN, self).__init__(config, pool)
 
