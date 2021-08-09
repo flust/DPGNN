@@ -1,16 +1,16 @@
 # Data
 min_word_cnt: 5
-geek_longsent_len: 64
-job_longsent_len: 192
+geek_longsent_len: 256
+job_longsent_len: 256
 
 # Model
 embedding_size: 100
-hidden_size: 100
+hidden_size: 32
 dropout: 0.2
 num_layers: 1
 
 # Training
-learning_rate: 0.0003
+learning_rate: 0.0001
 
 # General
 train_batch_size: 2048

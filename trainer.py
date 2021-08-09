@@ -322,6 +322,7 @@ class Trainer(object):
 
         for batch_idx, batched_data in iter_data:
             interaction = batched_data
+            # import pdb
             # pdb.set_trace()
 
             scores = self.model.predict(dict2device(interaction, self.device))

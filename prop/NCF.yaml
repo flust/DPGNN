@@ -1,5 +1,5 @@
 # Model
-embedding_size: 64
+embedding_size: 128
 mf_embedding_size: 64
 mlp_embedding_size: 64
 mlp_hidden_size: [64,32]

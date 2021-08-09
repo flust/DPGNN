@@ -4,7 +4,7 @@ n_layers: 2
 # dropout: 0.2
 
 # Training
-learning_rate: 0.0003
+learning_rate: 0.0001
 
 # General
 train_batch_size: 4096

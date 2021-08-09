@@ -152,6 +152,8 @@ class LightGCN(PJFModel):
 
         u_embeddings = user_all_embeddings[user]
         i_embeddings = item_all_embeddings[item]
+        # import pdb
+        # pdb.set_trace()
         scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
         return self.sigmoid(scores)
 

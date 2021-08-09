@@ -131,21 +131,27 @@ class BPJFNNPool(PJFPool):
             filepath = os.path.join(self.config['dataset_path'], f'{target}.longsent')
             token2id = getattr(self, f'{target}_token2id')
             self.logger.info(f'Loading {filepath}')
+            err = 0
             with open(filepath, 'r', encoding='utf-8') as file:
                 for line in tqdm(file):
+                    # import pdb
+                    # pdb.set_trace()
                     try:
                         token, longsent = line.strip().split('\t')
                     except:
                         token = line.strip()
                         longsent = '[WD_PAD]'
                     if token not in token2id:
+                        err += 1
                         continue
                     idx = token2id[token]
                     longsent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in longsent.split(' ')])
                     id2longsent[idx] = F.pad(longsent, (0, max_sent_len - longsent.shape[0]))
                     id2longsent_len[idx] = min(max_sent_len, longsent.shape[0])
+                    
             setattr(self, f'{target}_id2longsent', id2longsent)
             setattr(self, f'{target}_id2longsent_len', id2longsent_len)
+            
 
     def __str__(self):
         return '\n\t'.join([

@@ -35,9 +35,9 @@ class MF(PJFModel):
         geek_vec = self.geek_emb(geek_id)
         job_vec = self.job_emb(job_id)
         score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) \
-            # + self.geek_b(geek_id).squeeze() \
-            # + self.job_b(job_id).squeeze() \
-            # + self.miu
+            + self.geek_b(geek_id).squeeze() \
+            + self.job_b(job_id).squeeze() \
+            + self.miu
         return score
 
     def calculate_loss(self, interaction):
@@ -46,4 +46,6 @@ class MF(PJFModel):
         return self.loss(output, label)
 
     def predict(self, interaction):
+        # import pdb
+        # pdb.set_trace()
         return self.sigmoid(self.forward(interaction))

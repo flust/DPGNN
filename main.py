@@ -14,11 +14,11 @@ def get_arguments():
     parser.add_argument('--model', '-m', type=str, help='Model to test.', default='BGPJF')
     parser.add_argument('--name', '-n', type=str, help='Name of this run.')
     parser.add_argument('--direction', '-d', type=str, help='direction to evaluate', default='multi')
-    parser.add_argument('--embedding_size', '-es', type=int, help='embedding size', default=256)
+    parser.add_argument('--embedding_size', '-es', type=int, help='embedding size', default=64)
     parser.add_argument('--learning_rate', '-lr', type=float, help='learning rate', default=0.00001)
     parser.add_argument('--dropout', '-do', type=float, help='dropout', default=0.2)
-    parser.add_argument('--gpu_id', '-g', type=int, help='gpu_id', default=1)
-    parser.add_argument('--n_layers', '-nl', type=int, help='n_layers', default=2)
+    # parser.add_argument('--gpu_id', '-g', type=int, help='gpu_id', default=1)
+    # parser.add_argument('--n_layers', '-nl', type=int, help='n_layers', default=2)
     args = parser.parse_args()
     return args
 
@@ -109,6 +109,6 @@ if __name__ == "__main__":
         'embedding_size': args.embedding_size,
         'learning_rate': args.learning_rate,
         'dropout': args.dropout,
-        'gpu_id': args.gpu_id,
-        'n_layers': args.n_layers
+        # 'gpu_id': args.gpu_id,
+        # 'n_layers': args.n_layers
     })

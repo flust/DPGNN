@@ -160,6 +160,7 @@ class PJFNNDataset(PJFDataset):
         job_id = self.job_ids[index].item()
         return {
             'geek_id': geek_id,
+            'job_id': job_id,
             'geek_sents': self.geek_sents[geek_id_item],
             'job_sents': self.job_sents[job_id],
             'label': self.labels[index]
