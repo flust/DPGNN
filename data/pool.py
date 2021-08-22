@@ -97,6 +97,50 @@ class BERTPool(PJFPool):
 class MultiPJFPool(PJFPool):
     def __init__(self, config):
         super(MultiPJFPool, self).__init__(config)
+        self._load_group()
+        self._load_bert()
+
+    def _load_group(self):
+        self.geek2job = {}
+        self.job2geek = {}
+
+    def _load_ids(self):
+        for target in ['geek', 'job']:
+            token2id = {}
+            id2token = []
+            filepath = os.path.join(self.config['dataset_path'], f'{target}.token')
+            self.logger.info(f'Loading {filepath}')
+            with open(filepath, 'r') as file:
+                for i, line in enumerate(file):
+                    token = line.strip()
+                    token2id[token] = i
+                    id2token.append(token)
+            setattr(self, f'{target}_token2id', token2id)
+            setattr(self, f'{target}_id2token', id2token)
+            setattr(self, f'{target}_num', len(id2token))
+
+    def _load_bert(self):
+        # super(BERTDataset, self)._load_inters()
+        u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
+        self.logger.info(f'Loading from {u_filepath}')
+        j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
+        # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+        self.logger.info(f'Loading from {j_filepath}')
+        u_array = np.load(u_filepath).astype(np.float64)
+        j_array = np.load(j_filepath).astype(np.float64)
+        self.geek_token2bertid = {}
+        self.job_token2bertid = {}
+        # import pdb
+        # pdb.set_trace()
+        for i in range(u_array.shape[0]):
+            if str(u_array[i, 0].astype(int)) == '57386899':
+                print(i)
+            self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
+        for i in range(j_array.shape[0]):
+            self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
+        self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
+        self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
+        # pdb.set_trace()
 
 
 class BPJFNNPool(PJFPool):

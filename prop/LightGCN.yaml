@@ -1,5 +1,5 @@
 # Model
-embedding_size: 128
+embedding_size: 256
 n_layers: 2
 # dropout: 0.2
 

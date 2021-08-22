@@ -45,7 +45,11 @@ class LightGCN(PJFModel):
         self.user_embedding = torch.nn.Embedding(num_embeddings=self.n_users, embedding_dim=self.latent_dim)
         self.item_embedding = torch.nn.Embedding(num_embeddings=self.n_items, embedding_dim=self.latent_dim)
         # self.loss = BPRLoss()
-        self.sigmoid = nn.Sigmoid()
+        self.geek_b = nn.Embedding(self.geek_num, 1)
+        self.job_b = nn.Embedding(self.job_num, 1)
+        self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
+
+        # self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
 
         # self.reg_loss = EmbLoss()
@@ -141,7 +145,10 @@ class LightGCN(PJFModel):
         i_embeddings = item_all_embeddings[item]
 
         # calculate BPR Loss
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) \
+            + self.geek_b(user).squeeze() \
+            + self.job_b(item).squeeze() \
+            + self.miu
         return self.loss(scores, label)
 
     def predict(self, interaction):
@@ -154,8 +161,11 @@ class LightGCN(PJFModel):
         i_embeddings = item_all_embeddings[item]
         # import pdb
         # pdb.set_trace()
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
-        return self.sigmoid(scores)
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)\
+            + self.geek_b(user).squeeze() \
+            + self.job_b(item).squeeze() \
+            + self.miu
+        return scores
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]

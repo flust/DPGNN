@@ -17,11 +17,16 @@ class MultiPJF(PJFModel):
         self.dataset = dataset
         self.n_users = pool.geek_num
         self.n_items = pool.job_num
+        self.pool = pool
+        self.config = config
         # load parameters info 
         self.embedding_size = config['embedding_size']
         self.GCN_e_size = self.embedding_size
+        self.BERT_e_size = config['BERT_output_size']
         # self.GCN_e_size = config['GCN_embedding_size']  # int type:the embedding size of lightGCN
         self.GCN_n_layers = config['GCN_layers']  # int type:the layer num of lightGCN
+
+        self.ADD_BERT = config['ADD_BERT']
 
         # create edges
         self.edge_index = self.create_edge().to(config['device'])
@@ -37,24 +42,34 @@ class MultiPJF(PJFModel):
         for i in range(self.GCN_n_layers):
             gcn_modules.append(GCNConv(self.GCN_e_size, self.GCN_e_size))
         self.gcn_layers = nn.Sequential(*gcn_modules)
-        self.GCN_batchnorm = nn.BatchNorm1d(num_features=2*self.GCN_e_size)
-
+        
+        # self.GCN_batchnorm = nn.BatchNorm1d(num_features=2 * (self.GCN_e_size + self.BERT_e_size))
         # ----------- BERT PART -------------
-        self.BERT_embedding_size = config['BERT_embedding_size']
-        self.hd_size = config['BERT_hidden_size']
-        # self.out_size = config['BERT_output_size']
-        self.out_size = 2 * self.embedding_size
-        self.dropout = config['BERT_dropout']
-        self.bert_mlp = nn.Sequential(
-            nn.Linear(self.BERT_embedding_size, self.hd_size),
-            nn.BatchNorm1d(num_features=self.hd_size),
-            nn.Sigmoid(),
-            nn.Dropout(p=self.dropout),
-            nn.Linear(self.hd_size, self.out_size),
-            nn.BatchNorm1d(num_features=self.out_size)
-        )
+        if self.ADD_BERT:
+            self.bert_lr = nn.Linear(config['BERT_embedding_size'],
+                        self.BERT_e_size).to(self.config['device'])
+            self._load_bert()
 
-        self.fusion_layer = FusionLayer(self.out_size)
+        # self.BERT_embedding_size = config['BERT_embedding_size']
+        # self.hd_size = config['BERT_hidden_size']
+        # # self.out_size = config['BERT_output_size']
+        # self.out_size = 2 * self.embedding_size
+        # self.dropout = config['BERT_dropout']
+
+        # self.bert_mlp = nn.Sequential(
+        #     nn.Linear(self.BERT_embedding_size, self.hd_size),
+        #     nn.BatchNorm1d(num_features=self.hd_size),
+        #     nn.Sigmoid(),
+        #     nn.Dropout(p=self.dropout),
+        #     nn.Linear(self.hd_size, self.out_size),
+        #     nn.BatchNorm1d(num_features=self.out_size)
+        # )
+
+        # self.fusion_layer = FusionLayer(self.out_size)
+        # bias
+        self.geek_b = nn.Embedding(self.geek_num, 1)
+        self.job_b = nn.Embedding(self.job_num, 1)
+        self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
 
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
@@ -133,6 +148,23 @@ class MultiPJF(PJFModel):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 
+    def _load_bert(self):
+        self.bert_user = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_users):
+            geek_token = self.pool.geek_id2token[i]
+            bert_id =  self.pool.geek_token2bertid[geek_token]
+            bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
+            # bert_u_e = self.bert_lr(bert_u_vec).unsqueeze(0)
+            self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
+
+        self.bert_job = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_items):
+            job_token = self.pool.job_id2token[i]
+            bert_id =  self.pool.job_token2bertid[job_token]
+            bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
+            # bert_j_e = self.bert_lr(bert_j_vec).unsqueeze(0)
+            self.bert_job = torch.cat([self.bert_job, bert_j_vec], dim=0)
+
     def get_ego_embeddings(self):
         r"""Get the embedding of users and items and combine to an embedding matrix.
 
@@ -143,11 +175,24 @@ class MultiPJF(PJFModel):
         item_embeddings_c = self.item_embedding_c.weight
         user_embeddings_p = self.user_embedding_p.weight
         item_embeddings_p = self.item_embedding_p.weight
-
-        return torch.cat([user_embeddings_p,
+        id_e = torch.cat([user_embeddings_p,
                             item_embeddings_c,
                             user_embeddings_c,
                             item_embeddings_p], dim=0)
+        # return id_e
+        # import pdb
+        # pdb.set_trace()
+        if not self.ADD_BERT:
+            return id_e
+        else:
+            self.bert_u = self.bert_lr(self.bert_user)
+            self.bert_j = self.bert_lr(self.bert_job)
+
+            bert_e = torch.cat([self.bert_u,
+                                self.bert_j, 
+                                self.bert_u, 
+                                self.bert_j], dim = 0)
+            return torch.cat([id_e, bert_e], dim=1)
 
     def forward(self):
         all_embeddings = self.get_ego_embeddings()
@@ -163,10 +208,10 @@ class MultiPJF(PJFModel):
                     [self.n_users, self.n_items, self.n_users, self.n_items])
         return user_e_p, item_e_c, user_e_c, item_e_p
 
-    def bert_forward(self, interaction):
-        bert_vec = interaction['bert_vec']
-        bert_vec = self.bert_mlp(bert_vec)
-        return bert_vec
+    # def bert_forward(self, interaction):
+    #     bert_vec = interaction['bert_vec']
+    #     bert_vec = self.bert_mlp(bert_vec)
+    #     return bert_vec
 
     def calculate_score(self, interaction):
         r"""calculate score for user and item
@@ -177,27 +222,31 @@ class MultiPJF(PJFModel):
         user = interaction['geek_id']
         item = interaction['job_id']
         user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
-        bert_vec = self.bert_forward(interaction)
+        # bert_vec = self.bert_forward(interaction)
 
         u_e_c = user_e_c[user]
         i_e_c = item_e_c[item]
         u_e_p = user_e_p[user]
         i_e_p = item_e_p[item]
-        I_geek = torch.mul(u_e_p, i_e_c)
-        I_job = torch.mul(u_e_c, i_e_p)
+        I_geek = torch.mul(u_e_p, i_e_c).sum(dim=1)
+        I_job = torch.mul(u_e_c, i_e_p).sum(dim=1)
         
-        I = self.GCN_batchnorm(torch.cat((I_geek, I_job), 1))
-        scores = self.fusion_layer(I, bert_vec)
-        return scores.sum(dim = 1)
+        # I = self.GCN_batchnorm(torch.cat((I_geek, I_job), 1))
+        scores = I_geek + I_job \
+            + self.geek_b(user).squeeze() \
+            + self.job_b(item).squeeze() \
+            + self.miu
+        return scores
 
     def predict(self, interaction):
         scores = self.calculate_score(interaction)
-        return self.sigmoid(scores)
+        # return self.sigmoid(scores)
+        return scores
 
     def calculate_loss(self, interaction):
         # calculate BPR Loss
         scores = self.calculate_score(interaction)
         label = interaction['label']
-        scores = self.sigmoid(scores)
+        # scores = self.sigmoid(scores)
         return self.loss(scores, label)
 

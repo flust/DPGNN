@@ -201,13 +201,55 @@ class BERTDataset(PJFDataset):
     def __str__(self):
         return '\n\t'.join([
             super(BERTDataset, self).__str__(),
-            f'bert_vec: {self.bert_vec.shape}'
+            # f'bert_vec: {self.bert_vec.shape}'
         ])
 
 
 class MultiPJFDataset(BERTDataset):
     def __init__(self, config, pool, phase):
         super(BERTDataset, self).__init__(config, pool, phase)
+
+    # def _load_inters(self):
+    #     super(BERTDataset, self)._load_inters()
+    #     if self.phase[-3:] != 'add':
+    #         u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
+    #         self.logger.info(f'Loading from {u_filepath}')
+    #         j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
+    #         # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+    #         self.logger.info(f'Loading from {j_filepath}')
+    #         u_array = np.load(u_filepath).astype(np.float32)
+    #         j_array = np.load(j_filepath).astype(np.float32)
+    #         self.id2u = {}
+    #         self.id2j = {}
+    #         for i in range(u_array.shape[0]):
+    #             self.id2u[str(u_array[i, 0].astype(int))] = i
+    #         for i in range(j_array.shape[0]):
+    #             self.id2j[str(j_array[i, 0].astype(int))] = i
+    #         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
+    #         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
+
+    # def __getitem__(self, index):
+    #     if self.phase[-3:] == 'add':
+    #         return {
+    #             'geek_id': self.geek_ids[index],
+    #             'job_id': self.job_ids[index],
+    #             'u_bert_vec': None,
+    #             'j_bert_vec': None,
+    #             'label': self.labels[index]               
+    #         }
+    #     return {
+    #         'geek_id': self.geek_ids[index],
+    #         'job_id': self.job_ids[index],
+    #         'u_bert_vec': self.u_bert_vec[self.id2u[self.geek_ids[index]]],
+    #         'j_bert_vec': self.j_bert_vec[self.id2j[self.job_ids[index]]],
+    #         'label': self.labels[index]
+    #     }
+
+    # def __str__(self):
+    #     return '\n\t'.join([
+    #         super(BERTDataset, self).__str__(),
+    #         f'bert_vec: {self.bert_vec.shape}'
+    #     ])
 
 
 class RawVPJFDataset(PJFDataset):

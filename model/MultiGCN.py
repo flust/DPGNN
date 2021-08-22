@@ -26,6 +26,10 @@ class MultiGCN(PJFModel):
         self.item_embedding_c = nn.Embedding(self.n_items, self.latent_dim)
         self.user_embedding_p = nn.Embedding(self.n_users, self.latent_dim)
         self.item_embedding_p = nn.Embedding(self.n_items, self.latent_dim)
+        # bias
+        self.geek_b = nn.Embedding(self.geek_num, 1)
+        self.job_b = nn.Embedding(self.job_num, 1)
+        self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
 
         # gcn layers
         gcn_modules = []
@@ -138,8 +142,6 @@ class MultiGCN(PJFModel):
             all_embeddings = self.gcn_layers[i](all_embeddings, self.edge_index)
             embeddings_list.append(all_embeddings)
 
-        # import pdb
-        # pdb.set_trace()
         lightgcn_all_embeddings = torch.stack(embeddings_list, dim=1)
         lightgcn_all_embeddings = torch.mean(lightgcn_all_embeddings, dim=1)
 
@@ -163,7 +165,10 @@ class MultiGCN(PJFModel):
         i_e_p = item_e_p[item]
         I_geek = torch.mul(u_e_p, i_e_c).sum(dim=1)
         I_job = torch.mul(u_e_c, i_e_p).sum(dim=1)
-        scores = I_geek + I_job
+        scores = I_geek + I_job \
+            + self.geek_b(user).squeeze() \
+            + self.job_b(item).squeeze() \
+            + self.miu
         return scores
 
     def predict(self, interaction):
