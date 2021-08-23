@@ -27,6 +27,7 @@ class MultiPJF(PJFModel):
         self.GCN_n_layers = config['GCN_layers']  # int type:the layer num of lightGCN
 
         self.ADD_BERT = config['ADD_BERT']
+        self.ADD_STAR = config['ADD_STAR']
 
         # create edges
         self.edge_index = self.create_edge().to(config['device'])
@@ -42,30 +43,23 @@ class MultiPJF(PJFModel):
         for i in range(self.GCN_n_layers):
             gcn_modules.append(GCNConv(self.GCN_e_size, self.GCN_e_size))
         self.gcn_layers = nn.Sequential(*gcn_modules)
-        
-        # self.GCN_batchnorm = nn.BatchNorm1d(num_features=2 * (self.GCN_e_size + self.BERT_e_size))
-        # ----------- BERT PART -------------
+        # star_in_features = 2 * self.GCN_e_size
+        final_in_features = 6 * self.GCN_e_size
+
+        # bert part
         if self.ADD_BERT:
             self.bert_lr = nn.Linear(config['BERT_embedding_size'],
                         self.BERT_e_size).to(self.config['device'])
             self._load_bert()
+            # star_in_features = 2 * (self.GCN_e_size + self.BERT_e_size)
+            final_in_features = 6 * (self.GCN_e_size + self.BERT_e_size)
 
-        # self.BERT_embedding_size = config['BERT_embedding_size']
-        # self.hd_size = config['BERT_hidden_size']
-        # # self.out_size = config['BERT_output_size']
-        # self.out_size = 2 * self.embedding_size
-        # self.dropout = config['BERT_dropout']
+        # star part
+        if self.ADD_STAR:
+            # self.job_lr = nn.Linear(star_in_features, 1)
+            # self.geek_lr = nn.Linear(star_in_features, 1)
+            self.final_lr = nn.Linear(final_in_features, 1)
 
-        # self.bert_mlp = nn.Sequential(
-        #     nn.Linear(self.BERT_embedding_size, self.hd_size),
-        #     nn.BatchNorm1d(num_features=self.hd_size),
-        #     nn.Sigmoid(),
-        #     nn.Dropout(p=self.dropout),
-        #     nn.Linear(self.hd_size, self.out_size),
-        #     nn.BatchNorm1d(num_features=self.out_size)
-        # )
-
-        # self.fusion_layer = FusionLayer(self.out_size)
         # bias
         self.geek_b = nn.Embedding(self.geek_num, 1)
         self.job_b = nn.Embedding(self.job_num, 1)
@@ -154,7 +148,6 @@ class MultiPJF(PJFModel):
             geek_token = self.pool.geek_id2token[i]
             bert_id =  self.pool.geek_token2bertid[geek_token]
             bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
-            # bert_u_e = self.bert_lr(bert_u_vec).unsqueeze(0)
             self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
 
         self.bert_job = torch.FloatTensor([]).to(self.config['device'])
@@ -162,7 +155,6 @@ class MultiPJF(PJFModel):
             job_token = self.pool.job_id2token[i]
             bert_id =  self.pool.job_token2bertid[job_token]
             bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
-            # bert_j_e = self.bert_lr(bert_j_vec).unsqueeze(0)
             self.bert_job = torch.cat([self.bert_job, bert_j_vec], dim=0)
 
     def get_ego_embeddings(self):
@@ -179,9 +171,6 @@ class MultiPJF(PJFModel):
                             item_embeddings_c,
                             user_embeddings_c,
                             item_embeddings_p], dim=0)
-        # return id_e
-        # import pdb
-        # pdb.set_trace()
         if not self.ADD_BERT:
             return id_e
         else:
@@ -208,10 +197,32 @@ class MultiPJF(PJFModel):
                     [self.n_users, self.n_items, self.n_users, self.n_items])
         return user_e_p, item_e_c, user_e_c, item_e_p
 
-    # def bert_forward(self, interaction):
-    #     bert_vec = interaction['bert_vec']
-    #     bert_vec = self.bert_mlp(bert_vec)
-    #     return bert_vec
+    def get_star(self, id, direction, e_c, e_p):
+        # id  tensor  shape:4096
+        if direction == 0:
+            id2ids = self.pool.geek2jobs
+        else:
+            id2ids = self.pool.job2geeks
+
+        from operator import itemgetter
+        import random
+        id = id.cpu().numpy().tolist()
+        # import pdb
+        # pdb.set_trace()
+        ids = list(itemgetter(*id)(id2ids))
+
+        # ids = torch.Tensor([id2ids[id.cpu().numpy().tolist()]]).squeeze().type(torch.long)
+
+        p_star = torch.FloatTensor().to(self.config['device'])
+        c_star = torch.FloatTensor().to(self.config['device'])
+        for i in ids:
+            i = random.sample(i, min(len(i),10))
+            p = e_p[i].mean(dim=0) if e_p[i].dim() == 2 else e_p[i]
+            c = e_c[i].mean(dim=0) if e_c[i].dim() == 2 else e_c[i]
+            p_star = torch.cat((p_star, p.unsqueeze(0)), dim=0)
+            c_star = torch.cat((c_star, c.unsqueeze(0)), dim=0)
+
+        return p_star, c_star
 
     def calculate_score(self, interaction):
         r"""calculate score for user and item
@@ -219,24 +230,49 @@ class MultiPJF(PJFModel):
         Returns:
             torch.mul(user_embedding, item_embedding)
         """
-        user = interaction['geek_id']
+        user = interaction['geek_id']   # shape 4096
         item = interaction['job_id']
         user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
-        # bert_vec = self.bert_forward(interaction)
 
         u_e_c = user_e_c[user]
         i_e_c = item_e_c[item]
         u_e_p = user_e_p[user]
         i_e_p = item_e_p[item]
-        I_geek = torch.mul(u_e_p, i_e_c).sum(dim=1)
-        I_job = torch.mul(u_e_c, i_e_p).sum(dim=1)
-        
-        # I = self.GCN_batchnorm(torch.cat((I_geek, I_job), 1))
-        scores = I_geek + I_job \
-            + self.geek_b(user).squeeze() \
-            + self.job_b(item).squeeze() \
-            + self.miu
-        return scores
+
+        if not self.ADD_STAR:
+            scores = torch.mul(u_e_p, i_e_c).sum(dim=1) \
+                + torch.mul(u_e_c, i_e_p).sum(dim=1) \
+                + self.geek_b(user).squeeze() \
+                + self.job_b(item).squeeze() \
+                + self.miu
+        else:
+            I_geek = torch.mul(u_e_p, i_e_c)
+            I_job = torch.mul(u_e_c, i_e_p)
+
+            # job_p_star = torch.FloatTensor().to(self.config['device'])
+            # job_c_star = torch.FloatTensor().to(self.config['device'])
+            # geek_p_star = torch.FloatTensor().to(self.config['device'])
+            # geek_c_star = torch.FloatTensor().to(self.config['device'])
+            # for u in user:
+            #     jp, jc = self.get_star(u, 0, item_e_c, item_e_p)
+            #     job_p_star = torch.cat((job_p_star, jp.unsqueeze(0)), dim=0)
+            #     job_c_star = torch.cat((job_c_star, jc.unsqueeze(0)), dim=0)
+
+            # for i in item:
+            #     gp, gc = self.get_star(i, 1, user_e_c, user_e_p)
+            #     geek_p_star = torch.cat((geek_p_star, gp.unsqueeze(0)), dim=0)
+            #     geek_c_star = torch.cat((geek_c_star, gc.unsqueeze(0)), dim=0)
+
+            job_p_star, job_c_star = self.get_star(user, 0, item_e_c, item_e_p)
+            geek_p_star, geek_c_star = self.get_star(item, 1, user_e_c, user_e_p)
+            
+            scores = self.final_lr(torch.cat([job_p_star,
+                                                job_c_star,
+                                                geek_p_star,
+                                                geek_c_star,
+                                                I_geek,
+                                                I_job], dim=1))
+        return scores.squeeze()
 
     def predict(self, interaction):
         scores = self.calculate_score(interaction)

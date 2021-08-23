@@ -101,8 +101,21 @@ class MultiPJFPool(PJFPool):
         self._load_bert()
 
     def _load_group(self):
-        self.geek2job = {}
-        self.job2geek = {}
+        self.geek2jobs = {}
+        self.job2geeks = {}
+        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
+        for l in data_all:
+            gid, jid, _ = l.split('\t')
+            gid = self.geek_token2id[gid]
+            jid = self.job_token2id[jid]
+            if gid not in self.geek2jobs.keys():
+                self.geek2jobs[gid] = [jid]
+            else:
+                self.geek2jobs[gid].append(jid)
+            if jid not in self.job2geeks.keys():
+                self.job2geeks[jid] = [gid]
+            else:
+                self.job2geeks[jid].append(gid)
 
     def _load_ids(self):
         for target in ['geek', 'job']:
@@ -130,17 +143,12 @@ class MultiPJFPool(PJFPool):
         j_array = np.load(j_filepath).astype(np.float64)
         self.geek_token2bertid = {}
         self.job_token2bertid = {}
-        # import pdb
-        # pdb.set_trace()
         for i in range(u_array.shape[0]):
-            if str(u_array[i, 0].astype(int)) == '57386899':
-                print(i)
             self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
         for i in range(j_array.shape[0]):
             self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
-        # pdb.set_trace()
 
 
 class BPJFNNPool(PJFPool):
