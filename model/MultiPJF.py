@@ -9,6 +9,8 @@ from model.layer import GCNConv
 from scipy.sparse import coo_matrix
 from model.layer import FusionLayer
 
+from operator import itemgetter
+import random
 
 class MultiPJF(PJFModel):
     def __init__(self, config, pool, dataset):
@@ -204,14 +206,8 @@ class MultiPJF(PJFModel):
         else:
             id2ids = self.pool.job2geeks
 
-        from operator import itemgetter
-        import random
         id = id.cpu().numpy().tolist()
-        # import pdb
-        # pdb.set_trace()
         ids = list(itemgetter(*id)(id2ids))
-
-        # ids = torch.Tensor([id2ids[id.cpu().numpy().tolist()]]).squeeze().type(torch.long)
 
         p_star = torch.FloatTensor().to(self.config['device'])
         c_star = torch.FloatTensor().to(self.config['device'])
