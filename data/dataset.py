@@ -228,22 +228,18 @@ class MultiPJFDataset(BERTDataset):
     #         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
     #         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
-    # def __getitem__(self, index):
-    #     if self.phase[-3:] == 'add':
-    #         return {
-    #             'geek_id': self.geek_ids[index],
-    #             'job_id': self.job_ids[index],
-    #             'u_bert_vec': None,
-    #             'j_bert_vec': None,
-    #             'label': self.labels[index]               
-    #         }
-    #     return {
-    #         'geek_id': self.geek_ids[index],
-    #         'job_id': self.job_ids[index],
-    #         'u_bert_vec': self.u_bert_vec[self.id2u[self.geek_ids[index]]],
-    #         'j_bert_vec': self.j_bert_vec[self.id2j[self.job_ids[index]]],
-    #         'label': self.labels[index]
-    #     }
+    def __getitem__(self, index):
+        if self.phase[-3:] == 'add':
+            return {
+                'geek_id': self.geek_ids[index],
+                'job_id': self.job_ids[index],
+                'label': self.labels[index]               
+            }
+        return {
+            'geek_id': self.geek_ids[index],
+            'job_id': self.job_ids[index],
+            'label': self.labels[index]
+        }
 
     # def __str__(self):
     #     return '\n\t'.join([

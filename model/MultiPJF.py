@@ -218,25 +218,15 @@ class MultiPJF(PJFModel):
         else:
             id2ids = self.pool.job2geeks
 
-        id = id.cpu().numpy().tolist()
+        id = id.tolist()
         ids = list(itemgetter(*id)(id2ids))
         ids = [n for a in ids for n in a]
 
-        p_star = e_p[ids]
-        p_star = p_star.reshape(-1, self.pool.sample_n, e_p.shape[1]) \
-                            .mean(dim=1)
-        c_star = e_c[ids]  
-        c_star = c_star.reshape(-1, self.pool.sample_n, e_c.shape[1]) \
-                            .mean(dim=1)   # [batch_size, len]
-                            
-        # import pdb
-        # pdb.set_trace()
-        # for i in ids:
-        #     p = e_p[i].mean(dim=0)
-        #     c = e_c[i].mean(dim=0)
-        #     p_star = torch.cat((p_star, p.unsqueeze(0)), dim=0)
-        #     c_star = torch.cat((c_star, c.unsqueeze(0)), dim=0)
-
+        p_star = e_p[ids].detach()
+        p_star = p_star.reshape(-1, self.pool.sample_n, e_p.shape[1]).mean(dim=1)
+        c_star = e_c[ids].detach()
+        c_star = c_star.reshape(-1, self.pool.sample_n, e_c.shape[1]).mean(dim=1)  
+         # [batch_size, len]
         return p_star, c_star
 
     def calculate_score(self, interaction):
@@ -264,20 +254,6 @@ class MultiPJF(PJFModel):
             I_geek = torch.mul(u_e_p, i_e_c)
             I_job = torch.mul(u_e_c, i_e_p)
 
-            # job_p_star = torch.FloatTensor().to(self.config['device'])
-            # job_c_star = torch.FloatTensor().to(self.config['device'])
-            # geek_p_star = torch.FloatTensor().to(self.config['device'])
-            # geek_c_star = torch.FloatTensor().to(self.config['device'])
-            # for u in user:
-            #     jp, jc = self.get_star(u, 0, item_e_c, item_e_p)
-            #     job_p_star = torch.cat((job_p_star, jp.unsqueeze(0)), dim=0)
-            #     job_c_star = torch.cat((job_c_star, jc.unsqueeze(0)), dim=0)
-
-            # for i in item:
-            #     gp, gc = self.get_star(i, 1, user_e_c, user_e_p)
-            #     geek_p_star = torch.cat((geek_p_star, gp.unsqueeze(0)), dim=0)
-            #     geek_c_star = torch.cat((geek_c_star, gc.unsqueeze(0)), dim=0)
-
             job_p_star, job_c_star = self.get_star(user, 0, item_e_c, item_e_p)
             geek_p_star, geek_c_star = self.get_star(item, 1, user_e_c, user_e_p)
             
@@ -288,8 +264,6 @@ class MultiPJF(PJFModel):
                                                 I_geek,
                                                 I_job], dim=1)) # mlp \
             score = score.squeeze()
-            # import pdb
-            # pdb.set_trace() 
             scores = score + self.geek_b(user).squeeze() \
                 + self.job_b(item).squeeze() \
                 + self.miu

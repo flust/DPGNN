@@ -4,7 +4,7 @@ GCN_layers: 3
 
 # BERT part
 BERT_embedding_size: 768
-BERT_output_size: 8
+BERT_output_size: 32
 ADD_BERT: True
 ADD_STAR: True
 sample_n: 3
