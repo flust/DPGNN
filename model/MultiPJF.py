@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torch.nn.init import xavier_normal_
 from model.abstract import PJFModel
@@ -46,7 +47,7 @@ class MultiPJF(PJFModel):
             gcn_modules.append(GCNConv(self.GCN_e_size, self.GCN_e_size))
         self.gcn_layers = nn.Sequential(*gcn_modules)
         # star_in_features = 2 * self.GCN_e_size
-        final_in_features = 6 * self.GCN_e_size
+        self.final_in_features = 6 * self.GCN_e_size
 
         # bert part
         if self.ADD_BERT:
@@ -54,13 +55,23 @@ class MultiPJF(PJFModel):
                         self.BERT_e_size).to(self.config['device'])
             self._load_bert()
             # star_in_features = 2 * (self.GCN_e_size + self.BERT_e_size)
-            final_in_features = 6 * (self.GCN_e_size + self.BERT_e_size)
+            self.final_in_features = 6 * (self.GCN_e_size + self.BERT_e_size)
 
         # star part
         if self.ADD_STAR:
             # self.job_lr = nn.Linear(star_in_features, 1)
             # self.geek_lr = nn.Linear(star_in_features, 1)
-            self.final_lr = nn.Linear(final_in_features, 1)
+            # self.final_lr = nn.Linear(self.final_in_features, 1)
+            self.hd_size = 64
+            self.dropout = 0.1
+            self.mlp = nn.Sequential(
+                nn.Linear(self.final_in_features, self.hd_size),
+                nn.BatchNorm1d(num_features=self.hd_size),
+                nn.Sigmoid(),
+                nn.Dropout(p=self.dropout),
+                nn.Linear(self.hd_size, 1)
+            )
+
 
         # bias
         self.geek_b = nn.Embedding(self.geek_num, 1)
@@ -201,6 +212,7 @@ class MultiPJF(PJFModel):
 
     def get_star(self, id, direction, e_c, e_p):
         # id  tensor  shape:4096
+        # e_c : [num, embedding_size]
         if direction == 0:
             id2ids = self.pool.geek2jobs
         else:
@@ -208,15 +220,22 @@ class MultiPJF(PJFModel):
 
         id = id.cpu().numpy().tolist()
         ids = list(itemgetter(*id)(id2ids))
+        ids = [n for a in ids for n in a]
 
-        p_star = torch.FloatTensor().to(self.config['device'])
-        c_star = torch.FloatTensor().to(self.config['device'])
-        for i in ids:
-            i = random.sample(i, min(len(i),10))
-            p = e_p[i].mean(dim=0) if e_p[i].dim() == 2 else e_p[i]
-            c = e_c[i].mean(dim=0) if e_c[i].dim() == 2 else e_c[i]
-            p_star = torch.cat((p_star, p.unsqueeze(0)), dim=0)
-            c_star = torch.cat((c_star, c.unsqueeze(0)), dim=0)
+        p_star = e_p[ids]
+        p_star = p_star.reshape(-1, self.pool.sample_n, e_p.shape[1]) \
+                            .mean(dim=1)
+        c_star = e_c[ids]  
+        c_star = c_star.reshape(-1, self.pool.sample_n, e_c.shape[1]) \
+                            .mean(dim=1)   # [batch_size, len]
+                            
+        # import pdb
+        # pdb.set_trace()
+        # for i in ids:
+        #     p = e_p[i].mean(dim=0)
+        #     c = e_c[i].mean(dim=0)
+        #     p_star = torch.cat((p_star, p.unsqueeze(0)), dim=0)
+        #     c_star = torch.cat((c_star, c.unsqueeze(0)), dim=0)
 
         return p_star, c_star
 
@@ -262,12 +281,18 @@ class MultiPJF(PJFModel):
             job_p_star, job_c_star = self.get_star(user, 0, item_e_c, item_e_p)
             geek_p_star, geek_c_star = self.get_star(item, 1, user_e_c, user_e_p)
             
-            scores = self.final_lr(torch.cat([job_p_star,
+            score = self.mlp(torch.cat([job_p_star,
                                                 job_c_star,
                                                 geek_p_star,
                                                 geek_c_star,
                                                 I_geek,
-                                                I_job], dim=1))
+                                                I_job], dim=1)) # mlp \
+            score = score.squeeze()
+            # import pdb
+            # pdb.set_trace() 
+            scores = score + self.geek_b(user).squeeze() \
+                + self.job_b(item).squeeze() \
+                + self.miu
         return scores.squeeze()
 
     def predict(self, interaction):
@@ -280,5 +305,7 @@ class MultiPJF(PJFModel):
         scores = self.calculate_score(interaction)
         label = interaction['label']
         # scores = self.sigmoid(scores)
+        # import pdb
+        # pdb.set_trace()
         return self.loss(scores, label)
 

@@ -5,6 +5,7 @@ from tqdm import tqdm
 import numpy as np
 import torch
 import torch.nn.functional as F
+import random
 
 
 class PJFPool(object):
@@ -66,8 +67,6 @@ class MultiGCNPool(PJFPool):
     def __init__(self, config):
         super(MultiGCNPool, self).__init__(config)
     
-    
-
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):
@@ -97,6 +96,7 @@ class BERTPool(PJFPool):
 class MultiPJFPool(PJFPool):
     def __init__(self, config):
         super(MultiPJFPool, self).__init__(config)
+        self.sample_n = config['sample_n']
         self._load_group()
         self._load_bert()
 
@@ -105,7 +105,9 @@ class MultiPJFPool(PJFPool):
         self.job2geeks = {}
         data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
         for l in data_all:
-            gid, jid, _ = l.split('\t')
+            gid, jid, label = l.split('\t')
+            if label == '0\n':
+                continue
             gid = self.geek_token2id[gid]
             jid = self.job_token2id[jid]
             if gid not in self.geek2jobs.keys():
@@ -116,6 +118,26 @@ class MultiPJFPool(PJFPool):
                 self.job2geeks[jid] = [gid]
             else:
                 self.job2geeks[jid].append(gid)
+
+        for i in range(self.geek_num):
+            if i not in self.geek2jobs.keys():
+                self.geek2jobs[i] = [self.job_num - 1] * self.sample_n
+            elif len(self.geek2jobs[i]) < self.sample_n:
+                self.geek2jobs[i].extend([self.job_num - 1] * \
+                    (self.sample_n - len(self.geek2jobs[i])))
+            else:
+                self.geek2jobs[i] = random.sample(self.geek2jobs[i], self.sample_n)
+
+        # import pdb
+        # pdb.set_trace()
+        for i in range(self.job_num):
+            if i not in self.job2geeks.keys():
+                self.job2geeks[i] = [self.geek_num - 1] * self.sample_n
+            elif len(self.job2geeks[i]) < self.sample_n:
+                self.job2geeks[i].extend([self.geek_num - 1] * \
+                    (self.sample_n - len(self.job2geeks[i])))
+            else:
+                self.job2geeks[i] = random.sample(self.job2geeks[i], self.sample_n)
 
     def _load_ids(self):
         for target in ['geek', 'job']:
@@ -128,6 +150,10 @@ class MultiPJFPool(PJFPool):
                     token = line.strip()
                     token2id[token] = i
                     id2token.append(token)
+            # add padding
+            token2id['0'] = len(id2token)
+            id2token.append('0')
+
             setattr(self, f'{target}_token2id', token2id)
             setattr(self, f'{target}_id2token', id2token)
             setattr(self, f'{target}_num', len(id2token))
@@ -139,14 +165,23 @@ class MultiPJFPool(PJFPool):
         j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
         # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
         self.logger.info(f'Loading from {j_filepath}')
+
         u_array = np.load(u_filepath).astype(np.float64)
+        # add padding 
+        u_array = np.vstack([u_array, np.zeros((1, u_array.shape[1]))])
+
         j_array = np.load(j_filepath).astype(np.float64)
+        # add padding
+        j_array = np.vstack([j_array, np.zeros((1, j_array.shape[1]))])
+
         self.geek_token2bertid = {}
         self.job_token2bertid = {}
         for i in range(u_array.shape[0]):
             self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
         for i in range(j_array.shape[0]):
             self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
+        # import pdb
+        # pdb.set_trace()
         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
