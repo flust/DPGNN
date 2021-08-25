@@ -29,6 +29,7 @@ class MultiPJF(PJFModel):
         # self.GCN_e_size = config['GCN_embedding_size']  # int type:the embedding size of lightGCN
         self.GCN_n_layers = config['GCN_layers']  # int type:the layer num of lightGCN
 
+        self.ADD_BIAS = config['ADD_BIAS']
         self.ADD_BERT = config['ADD_BERT']
         self.ADD_STAR = config['ADD_STAR']
 
@@ -71,7 +72,10 @@ class MultiPJF(PJFModel):
                 nn.Dropout(p=self.dropout),
                 nn.Linear(self.hd_size, 1)
             )
-
+            self.job_c_attn = nn.Linear(int(self.final_in_features / 6), 1)
+            self.job_p_attn = nn.Linear(int(self.final_in_features / 6), 1)
+            self.geek_c_attn = nn.Linear(int(self.final_in_features / 6), 1)
+            self.geek_p_attn = nn.Linear(int(self.final_in_features / 6), 1)
 
         # bias
         self.geek_b = nn.Embedding(self.geek_num, 1)
@@ -210,24 +214,22 @@ class MultiPJF(PJFModel):
                     [self.n_users, self.n_items, self.n_users, self.n_items])
         return user_e_p, item_e_c, user_e_c, item_e_p
 
-    def get_star(self, ids, direction, e_c, e_p):
-        # id  tensor  shape:4096
-        # e_c : [num, embedding_size]
-        # if direction == 0:
-        #     id2ids = self.pool.geek2jobs
-        # else:
-        #     id2ids = self.pool.job2geeks
-
-        # id = id.tolist()
-        # ids = list(itemgetter(*id)(id2ids))
+    def get_star(self, ids, e_c, e_p, direction):
         ids = ids.tolist()
         ids = [n for a in ids for n in a]
 
-        p_star = e_p[ids].detach()
-        p_star = p_star.reshape(-1, self.pool.sample_n, e_p.shape[1]).mean(dim=1)
-        c_star = e_c[ids].detach()
-        c_star = c_star.reshape(-1, self.pool.sample_n, e_c.shape[1]).mean(dim=1)  
-         # [batch_size, len]
+        p_star_origin = e_p[ids].detach()
+        p_star_origin = p_star_origin.reshape(-1, self.pool.sample_n, e_p.shape[1]) # [4096, 3, embedding_size]
+        p_star_attn_weight = self.geek_p_attn(p_star_origin) if direction else self.job_p_attn(p_star_origin)
+        p_star_attn_weight = torch.softmax(p_star_attn_weight, dim=1)
+        p_star = torch.sum(p_star_origin * p_star_attn_weight, dim=1)
+
+        c_star_origin = e_c[ids].detach()
+        c_star_origin = c_star_origin.reshape(-1, self.pool.sample_n, e_c.shape[1])
+        c_star_attn_weight = self.geek_c_attn(c_star_origin) if direction else self.job_c_attn(c_star_origin)
+        c_star_attn_weight = torch.softmax(c_star_attn_weight, dim=1)
+        c_star = torch.sum(c_star_origin * c_star_attn_weight, dim=1)
+        
         return p_star, c_star
 
     def calculate_score(self, interaction):
@@ -247,18 +249,15 @@ class MultiPJF(PJFModel):
 
         if not self.ADD_STAR:
             scores = torch.mul(u_e_p, i_e_c).sum(dim=1) \
-                + torch.mul(u_e_c, i_e_p).sum(dim=1) \
-                + self.geek_b(user).squeeze() \
-                + self.job_b(item).squeeze() \
-                + self.miu
+                + torch.mul(u_e_c, i_e_p).sum(dim=1)
         else:
             I_geek = torch.mul(u_e_p, i_e_c)
             I_job = torch.mul(u_e_c, i_e_p)
 
             job_p_star, job_c_star = self.get_star(interaction['geek2jobs'],
-                                            0, item_e_c, item_e_p)
+                                            item_e_c, item_e_p, 0)
             geek_p_star, geek_c_star = self.get_star(interaction['job2geeks'],
-                                            1, user_e_c, user_e_p)
+                                            user_e_c, user_e_p, 1)
             
             score = self.mlp(torch.cat([job_p_star,
                                                 job_c_star,
@@ -266,8 +265,10 @@ class MultiPJF(PJFModel):
                                                 geek_c_star,
                                                 I_geek,
                                                 I_job], dim=1)) # mlp \
-            score = score.squeeze()
-            scores = score + self.geek_b(user).squeeze() \
+            scores = score.squeeze()
+
+        if self.ADD_BIAS:
+            scores += self.geek_b(user).squeeze() \
                 + self.job_b(item).squeeze() \
                 + self.miu
         return scores.squeeze()
