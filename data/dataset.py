@@ -9,7 +9,7 @@ from tqdm import tqdm
 from scipy.sparse import coo_matrix
 
 from utils import dynamic_load
-
+import random
 
 def create_datasets(config, pool):
     data_list = []
@@ -208,6 +208,7 @@ class BERTDataset(PJFDataset):
 class MultiPJFDataset(BERTDataset):
     def __init__(self, config, pool, phase):
         super(BERTDataset, self).__init__(config, pool, phase)
+        self.pool = pool
 
     # def _load_inters(self):
     #     super(BERTDataset, self)._load_inters()
@@ -229,15 +230,42 @@ class MultiPJFDataset(BERTDataset):
     #         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
     def __getitem__(self, index):
+        self.sample_n = self.pool.sample_n
+
+        g = self.geek_ids[index]
+        if g not in self.pool.geek2jobs.keys():
+            self.geek2jobs = [self.job_num - 1] * self.sample_n
+        elif len(self.pool.geek2jobs[g]) < self.sample_n:
+            self.geek2jobs = self.pool.geek2jobs[g].extend([self.job_num - 1] * \
+                (self.sample_n - len(self.pool.geek2jobs[g])))
+        else:
+            self.geek2jobs = random.sample(self.pool.geek2jobs[g], self.sample_n)
+
+        j = self.job_ids[index]
+        if j not in self.pool.job2geeks.keys():
+            self.job2geeks = [self.geek_num - 1] * self.sample_n
+        elif len(self.pool.job2geeks[j]) < self.sample_n:
+            self.job2geeks = self.pool.job2geeks[j].extend([self.geek_num - 1] * \
+                (self.sample_n - len(self.pool.job2geeks[j])))
+        else:
+            self.job2geeks = random.sample(self.pool.job2geeks[j], self.sample_n)
+
+        self.geek2jobs = torch.Tensor(self.geek2jobs)
+        self.job2geeks = torch.Tensor(self.job2geeks)
+        
         if self.phase[-3:] == 'add':
             return {
                 'geek_id': self.geek_ids[index],
                 'job_id': self.job_ids[index],
+                'geek2jobs': None,
+                'job2geeks': None,
                 'label': self.labels[index]               
             }
         return {
             'geek_id': self.geek_ids[index],
             'job_id': self.job_ids[index],
+            'geek2jobs': self.geek2jobs,
+            'job2geeks': self.job2geeks,
             'label': self.labels[index]
         }
 

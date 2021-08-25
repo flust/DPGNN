@@ -210,16 +210,17 @@ class MultiPJF(PJFModel):
                     [self.n_users, self.n_items, self.n_users, self.n_items])
         return user_e_p, item_e_c, user_e_c, item_e_p
 
-    def get_star(self, id, direction, e_c, e_p):
+    def get_star(self, ids, direction, e_c, e_p):
         # id  tensor  shape:4096
         # e_c : [num, embedding_size]
-        if direction == 0:
-            id2ids = self.pool.geek2jobs
-        else:
-            id2ids = self.pool.job2geeks
+        # if direction == 0:
+        #     id2ids = self.pool.geek2jobs
+        # else:
+        #     id2ids = self.pool.job2geeks
 
-        id = id.tolist()
-        ids = list(itemgetter(*id)(id2ids))
+        # id = id.tolist()
+        # ids = list(itemgetter(*id)(id2ids))
+        ids = ids.tolist()
         ids = [n for a in ids for n in a]
 
         p_star = e_p[ids].detach()
@@ -254,8 +255,10 @@ class MultiPJF(PJFModel):
             I_geek = torch.mul(u_e_p, i_e_c)
             I_job = torch.mul(u_e_c, i_e_p)
 
-            job_p_star, job_c_star = self.get_star(user, 0, item_e_c, item_e_p)
-            geek_p_star, geek_c_star = self.get_star(item, 1, user_e_c, user_e_p)
+            job_p_star, job_c_star = self.get_star(interaction['geek2jobs'],
+                                            0, item_e_c, item_e_p)
+            geek_p_star, geek_c_star = self.get_star(interaction['job2geeks'],
+                                            1, user_e_c, user_e_p)
             
             score = self.mlp(torch.cat([job_p_star,
                                                 job_c_star,

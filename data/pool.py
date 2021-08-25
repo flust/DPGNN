@@ -119,26 +119,6 @@ class MultiPJFPool(PJFPool):
             else:
                 self.job2geeks[jid].append(gid)
 
-        for i in range(self.geek_num):
-            if i not in self.geek2jobs.keys():
-                self.geek2jobs[i] = [self.job_num - 1] * self.sample_n
-            elif len(self.geek2jobs[i]) < self.sample_n:
-                self.geek2jobs[i].extend([self.job_num - 1] * \
-                    (self.sample_n - len(self.geek2jobs[i])))
-            else:
-                self.geek2jobs[i] = random.sample(self.geek2jobs[i], self.sample_n)
-
-        # import pdb
-        # pdb.set_trace()
-        for i in range(self.job_num):
-            if i not in self.job2geeks.keys():
-                self.job2geeks[i] = [self.geek_num - 1] * self.sample_n
-            elif len(self.job2geeks[i]) < self.sample_n:
-                self.job2geeks[i].extend([self.geek_num - 1] * \
-                    (self.sample_n - len(self.job2geeks[i])))
-            else:
-                self.job2geeks[i] = random.sample(self.job2geeks[i], self.sample_n)
-
     def _load_ids(self):
         for target in ['geek', 'job']:
             token2id = {}
