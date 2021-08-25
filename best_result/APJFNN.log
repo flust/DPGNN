@@ -1,0 +1,225 @@
+Mon 26 Jul 2021 08:37:01 INFO Parameters:
+	model=APJFNN
+	use_gpu=True
+	gpu_id=0
+	learner=Adam
+	epochs=3000
+	eval_step=1
+	stopping_step=5
+	clip_grad_norm=None
+	pos_weight=8.633
+	topk=[5]
+	valid_metric=gauc
+	num_workers=4
+	pin_memory=True
+	checkpoint_dir=./saved/
+	dataset_path=/home/yangchen/dataset/job/cikm/final_dir
+	loss_decimal_place=4
+	metric_decimal_place=4
+	seed=2020
+	reproducibility=True
+	min_word_cnt=5
+	geek_max_sent_num=20
+	job_max_sent_num=20
+	geek_max_sent_len=30
+	job_max_sent_len=30
+	embedding_size=64
+	LSTM_hidden_dim=64
+	learning_rate=0.0003
+	train_batch_size=450
+	eval_batch_size=450
+	name=None
+	direction=multi
+	device=cuda
+Mon 26 Jul 2021 08:37:01 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/geek.token
+Mon 26 Jul 2021 08:37:01 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/job.token
+Mon 26 Jul 2021 08:37:01 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/word.cnt
+Mon 26 Jul 2021 08:37:01 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/geek.sent
+Mon 26 Jul 2021 08:37:08 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/job.sent
+Mon 26 Jul 2021 08:37:26 INFO Pool:
+	55493 geeks
+	41718 jobs
+Mon 26 Jul 2021 08:37:26 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.train_all
+Mon 26 Jul 2021 08:37:30 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.valid_g
+Mon 26 Jul 2021 08:37:30 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.test_g
+Mon 26 Jul 2021 08:37:31 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.test_g
+Mon 26 Jul 2021 08:37:31 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.test_j
+Mon 26 Jul 2021 08:37:32 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.train_g
+Mon 26 Jul 2021 08:37:33 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.train_j
+Mon 26 Jul 2021 08:37:35 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.user_add
+Mon 26 Jul 2021 08:37:38 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.job_add
+Mon 26 Jul 2021 08:37:38 INFO train_all Dataset:
+	2760725 interactions
+Mon 26 Jul 2021 08:37:38 INFO valid_g Dataset:
+	346256 interactions
+Mon 26 Jul 2021 08:37:38 INFO test_g Dataset:
+	323658 interactions
+Mon 26 Jul 2021 08:37:38 INFO test_g Dataset:
+	323658 interactions
+Mon 26 Jul 2021 08:37:38 INFO test_j Dataset:
+	158254 interactions
+Mon 26 Jul 2021 08:37:38 INFO train_g Dataset:
+	1076087 interactions
+Mon 26 Jul 2021 08:37:38 INFO train_j Dataset:
+	1684638 interactions
+Mon 26 Jul 2021 08:37:38 INFO user_add Dataset:
+	1767584 interactions
+Mon 26 Jul 2021 08:37:38 INFO job_add Dataset:
+	342216 interactions
+Mon 26 Jul 2021 08:37:45 INFO APJFNN(
+  (emb): Embedding(26383, 64, padding_idx=0)
+  (geek_biLSTM): LSTM(64, 64, batch_first=True, bidirectional=True)
+  (job_biLSTM): LSTM(64, 64, batch_first=True, bidirectional=True)
+  (job_layer): JobLayer(
+    (attn1): SelfAttentionEncoder(
+      (attn): Sequential(
+        (0): Linear(in_features=128, out_features=128, bias=True)
+        (1): Tanh()
+        (2): Linear(in_features=128, out_features=1, bias=False)
+        (3): Softmax(dim=1)
+      )
+    )
+    (biLSTM): LSTM(128, 64, batch_first=True, bidirectional=True)
+    (attn2): SelfAttentionEncoder(
+      (attn): Sequential(
+        (0): Linear(in_features=128, out_features=128, bias=True)
+        (1): Tanh()
+        (2): Linear(in_features=128, out_features=1, bias=False)
+        (3): Softmax(dim=1)
+      )
+    )
+  )
+  (geek_layer): GeekLayer(
+    (co_attn): CoAttentionEncoder(
+      (W): Linear(in_features=128, out_features=128, bias=False)
+      (U): Linear(in_features=128, out_features=128, bias=False)
+      (attn): Sequential(
+        (0): Tanh()
+        (1): Linear(in_features=128, out_features=1, bias=False)
+        (2): Softmax(dim=0)
+      )
+    )
+    (biLSTM): LSTM(128, 64, batch_first=True, bidirectional=True)
+    (self_attn): SelfAttentionEncoder(
+      (attn): Sequential(
+        (0): Linear(in_features=128, out_features=128, bias=True)
+        (1): Tanh()
+        (2): Linear(in_features=128, out_features=1, bias=False)
+        (3): Softmax(dim=1)
+      )
+    )
+  )
+  (mlp): MLP(
+    (net): Sequential(
+      (0): Linear(in_features=384, out_features=384, bias=True)
+      (1): Tanh()
+      (2): Linear(in_features=384, out_features=1, bias=True)
+    )
+  )
+  (loss): BCEWithLogitsLoss()
+)
+	Trainable parameters: 2251329
+Mon 26 Jul 2021 16:27:17 INFO epoch 0 training [time: 28172.16s, train loss:2024.6848]
+Mon 26 Jul 2021 16:50:14 INFO epoch 0 evaluating [time: 1377.10s, valid_score: 0.586100]
+Mon 26 Jul 2021 16:50:14 INFO valid result:
+	gauc:	0.5861
+	p@5:	0.2020
+	r@5:	0.5936
+	mrr:	0.4578
+Mon 26 Jul 2021 16:50:14 INFO Saving current best: ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Tue 27 Jul 2021 00:47:23 INFO epoch 1 training [time: 28628.97s, train loss:1984.2000]
+Tue 27 Jul 2021 01:10:50 INFO epoch 1 evaluating [time: 1407.32s, valid_score: 0.620500]
+Tue 27 Jul 2021 01:10:50 INFO valid result:
+	gauc:	0.6205
+	p@5:	0.2086
+	r@5:	0.6183
+	mrr:	0.4737
+Tue 27 Jul 2021 01:10:50 INFO Saving current best: ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Tue 27 Jul 2021 09:06:18 INFO epoch 2 training [time: 28527.90s, train loss:1968.7022]
+Tue 27 Jul 2021 09:30:12 INFO epoch 2 evaluating [time: 1434.05s, valid_score: 0.633000]
+Tue 27 Jul 2021 09:30:12 INFO valid result:
+	gauc:	0.6330
+	p@5:	0.2100
+	r@5:	0.6226
+	mrr:	0.4808
+Tue 27 Jul 2021 09:30:12 INFO Saving current best: ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Tue 27 Jul 2021 17:21:16 INFO epoch 3 training [time: 28263.94s, train loss:1956.0951]
+Tue 27 Jul 2021 17:44:04 INFO epoch 3 evaluating [time: 1367.57s, valid_score: 0.634100]
+Tue 27 Jul 2021 17:44:04 INFO valid result:
+	gauc:	0.6341
+	p@5:	0.2114
+	r@5:	0.6283
+	mrr:	0.4826
+Tue 27 Jul 2021 17:44:04 INFO Saving current best: ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Wed 28 Jul 2021 01:34:50 INFO epoch 4 training [time: 28246.24s, train loss:1943.7501]
+Wed 28 Jul 2021 01:58:05 INFO epoch 4 evaluating [time: 1394.53s, valid_score: 0.650200]
+Wed 28 Jul 2021 01:58:05 INFO valid result:
+	gauc:	0.6502
+	p@5:	0.2125
+	r@5:	0.6314
+	mrr:	0.4851
+Wed 28 Jul 2021 01:58:05 INFO Saving current best: ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Wed 28 Jul 2021 09:49:20 INFO epoch 5 training [time: 28274.91s, train loss:1933.2835]
+Wed 28 Jul 2021 10:11:44 INFO epoch 5 evaluating [time: 1344.37s, valid_score: 0.653300]
+Wed 28 Jul 2021 10:11:44 INFO valid result:
+	gauc:	0.6533
+	p@5:	0.2132
+	r@5:	0.6342
+	mrr:	0.4878
+Wed 28 Jul 2021 10:11:44 INFO Saving current best: ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Wed 28 Jul 2021 17:54:59 INFO epoch 6 training [time: 27795.20s, train loss:1924.4553]
+Wed 28 Jul 2021 18:17:52 INFO epoch 6 evaluating [time: 1372.18s, valid_score: 0.650200]
+Wed 28 Jul 2021 18:17:52 INFO valid result:
+	gauc:	0.6502
+	p@5:	0.2124
+	r@5:	0.6311
+	mrr:	0.4860
+Thu 29 Jul 2021 02:06:31 INFO epoch 7 training [time: 28119.41s, train loss:1916.8043]
+Thu 29 Jul 2021 02:29:51 INFO epoch 7 evaluating [time: 1400.21s, valid_score: 0.641200]
+Thu 29 Jul 2021 02:29:51 INFO valid result:
+	gauc:	0.6412
+	p@5:	0.2121
+	r@5:	0.6322
+	mrr:	0.4848
+Thu 29 Jul 2021 10:02:09 INFO epoch 8 training [time: 27137.50s, train loss:1908.4589]
+Thu 29 Jul 2021 10:24:47 INFO epoch 8 evaluating [time: 1358.41s, valid_score: 0.648100]
+Thu 29 Jul 2021 10:24:47 INFO valid result:
+	gauc:	0.6481
+	p@5:	0.2136
+	r@5:	0.6365
+	mrr:	0.4828
+Thu 29 Jul 2021 17:51:57 INFO epoch 9 training [time: 26829.86s, train loss:1900.7527]
+Thu 29 Jul 2021 18:12:16 INFO epoch 9 evaluating [time: 1218.98s, valid_score: 0.638900]
+Thu 29 Jul 2021 18:12:16 INFO valid result:
+	gauc:	0.6389
+	p@5:	0.2121
+	r@5:	0.6321
+	mrr:	0.4770
+Fri 30 Jul 2021 02:16:26 INFO epoch 10 training [time: 29049.88s, train loss:1893.4959]
+Fri 30 Jul 2021 02:39:29 INFO epoch 10 evaluating [time: 1383.12s, valid_score: 0.648100]
+Fri 30 Jul 2021 02:39:29 INFO valid result:
+	gauc:	0.6481
+	p@5:	0.2132
+	r@5:	0.6355
+	mrr:	0.4855
+Fri 30 Jul 2021 10:31:13 INFO epoch 11 training [time: 28304.01s, train loss:1886.3674]
+Fri 30 Jul 2021 10:53:41 INFO epoch 11 evaluating [time: 1347.78s, valid_score: 0.649800]
+Fri 30 Jul 2021 10:53:41 INFO valid result:
+	gauc:	0.6498
+	p@5:	0.2124
+	r@5:	0.6336
+	mrr:	0.4819
+Fri 30 Jul 2021 10:53:41 INFO Finished training, best eval result in epoch 5
+Fri 30 Jul 2021 10:53:41 INFO best valid result: {'p@5': 0.2132, 'r@5': 0.6342, 'mrr': 0.4878, 'gauc': 0.6533}
+Fri 30 Jul 2021 10:53:41 INFO Loading model structure and parameters from ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Fri 30 Jul 2021 11:13:55 INFO test for user result [all]: 
+	gauc:	0.6379
+	p@5:	0.2057
+	r@5:	0.6055
+	mrr:	0.4590
+Fri 30 Jul 2021 11:13:55 INFO Loading model structure and parameters from ./saved/APJFNN-Jul-26-2021_08-37-45.pth
+Fri 30 Jul 2021 11:23:39 INFO test for job result [all]: 
+	gauc:	0.5249
+	p@5:	0.3053
+	r@5:	0.5919
+	mrr:	0.5177

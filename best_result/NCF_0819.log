@@ -1,0 +1,221 @@
+Thu 19 Aug 2021 03:27:51 INFO Parameters:
+	model=NCF
+	use_gpu=True
+	gpu_id=0
+	learner=Adam
+	epochs=3000
+	eval_step=1
+	stopping_step=5
+	clip_grad_norm=None
+	pos_weight=8.633
+	topk=[5]
+	valid_metric=gauc
+	num_workers=4
+	pin_memory=True
+	checkpoint_dir=./saved/
+	dataset_path=/home/yangchen/dataset/job/cikm/final_dir
+	loss_decimal_place=4
+	metric_decimal_place=4
+	seed=2020
+	reproducibility=True
+	embedding_size=128
+	mf_embedding_size=64
+	mlp_embedding_size=64
+	mlp_hidden_size=[64, 32]
+	mf_train=True
+	mlp_train=True
+	dropout=0.2
+	learning_rate=1e-05
+	train_batch_size=4096
+	eval_batch_size=4096
+	name=None
+	direction=multi
+	n_layers=2
+	device=cuda
+Thu 19 Aug 2021 03:27:51 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/geek.token
+Thu 19 Aug 2021 03:27:51 INFO Loading /home/yangchen/dataset/job/cikm/final_dir/job.token
+Thu 19 Aug 2021 03:27:51 INFO Pool:
+	55493 geeks
+	41718 jobs
+Thu 19 Aug 2021 03:27:51 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.train_all
+Thu 19 Aug 2021 03:27:54 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.valid_g
+Thu 19 Aug 2021 03:27:54 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.test_g
+Thu 19 Aug 2021 03:27:55 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.test_g
+Thu 19 Aug 2021 03:27:55 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.test_j
+Thu 19 Aug 2021 03:27:56 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.train_g
+Thu 19 Aug 2021 03:27:57 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.train_j
+Thu 19 Aug 2021 03:27:58 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.user_add
+Thu 19 Aug 2021 03:28:01 INFO Loading from /home/yangchen/dataset/job/cikm/final_dir/data.job_add
+Thu 19 Aug 2021 03:28:02 INFO train_all Dataset:
+	1792324 interactions
+Thu 19 Aug 2021 03:28:02 INFO valid_g Dataset:
+	346256 interactions
+Thu 19 Aug 2021 03:28:02 INFO test_g Dataset:
+	323658 interactions
+Thu 19 Aug 2021 03:28:02 INFO test_g Dataset:
+	323658 interactions
+Thu 19 Aug 2021 03:28:02 INFO test_j Dataset:
+	158254 interactions
+Thu 19 Aug 2021 03:28:02 INFO train_g Dataset:
+	969675 interactions
+Thu 19 Aug 2021 03:28:02 INFO train_j Dataset:
+	822649 interactions
+Thu 19 Aug 2021 03:28:02 INFO user_add Dataset:
+	1767584 interactions
+Thu 19 Aug 2021 03:28:02 INFO job_add Dataset:
+	342216 interactions
+Thu 19 Aug 2021 03:28:09 INFO NCF(
+  (user_mf_embedding): Embedding(55493, 128)
+  (item_mf_embedding): Embedding(41718, 128)
+  (user_mlp_embedding): Embedding(55493, 128)
+  (item_mlp_embedding): Embedding(41718, 128)
+  (mlp_layers): MLPLayers(
+    (mlp_layers): Sequential(
+      (0): Dropout(p=0.2, inplace=False)
+      (1): Linear(in_features=256, out_features=64, bias=True)
+      (2): ReLU()
+      (3): Dropout(p=0.2, inplace=False)
+      (4): Linear(in_features=64, out_features=32, bias=True)
+      (5): ReLU()
+    )
+  )
+  (predict_layer): Linear(in_features=160, out_features=1, bias=True)
+  (sigmoid): Sigmoid()
+  (loss): BCEWithLogitsLoss()
+)
+	Trainable parameters: 24904705
+Thu 19 Aug 2021 03:28:31 INFO epoch 0 training [time: 21.40s, train loss:646.8584]
+Thu 19 Aug 2021 03:28:40 INFO epoch 0 evaluating [time: 9.98s, valid_score: 0.558600]
+Thu 19 Aug 2021 03:28:40 INFO valid result:
+	gauc:	0.5586
+	p@5:	0.1866
+	r@5:	0.5464
+	mrr:	0.3999
+Thu 19 Aug 2021 03:28:41 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:29:00 INFO epoch 1 training [time: 18.79s, train loss:646.8481]
+Thu 19 Aug 2021 03:29:10 INFO epoch 1 evaluating [time: 9.87s, valid_score: 0.591700]
+Thu 19 Aug 2021 03:29:10 INFO valid result:
+	gauc:	0.5917
+	p@5:	0.1943
+	r@5:	0.5708
+	mrr:	0.4310
+Thu 19 Aug 2021 03:29:11 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:29:24 INFO epoch 2 training [time: 13.11s, train loss:646.8045]
+Thu 19 Aug 2021 03:29:34 INFO epoch 2 evaluating [time: 9.78s, valid_score: 0.612100]
+Thu 19 Aug 2021 03:29:34 INFO valid result:
+	gauc:	0.6121
+	p@5:	0.1985
+	r@5:	0.5848
+	mrr:	0.4446
+Thu 19 Aug 2021 03:29:35 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:29:53 INFO epoch 3 training [time: 18.73s, train loss:646.6713]
+Thu 19 Aug 2021 03:30:03 INFO epoch 3 evaluating [time: 9.90s, valid_score: 0.618600]
+Thu 19 Aug 2021 03:30:03 INFO valid result:
+	gauc:	0.6186
+	p@5:	0.2002
+	r@5:	0.5922
+	mrr:	0.4481
+Thu 19 Aug 2021 03:30:04 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:30:23 INFO epoch 4 training [time: 19.05s, train loss:646.3269]
+Thu 19 Aug 2021 03:30:34 INFO epoch 4 evaluating [time: 10.28s, valid_score: 0.621200]
+Thu 19 Aug 2021 03:30:34 INFO valid result:
+	gauc:	0.6212
+	p@5:	0.2012
+	r@5:	0.5952
+	mrr:	0.4492
+Thu 19 Aug 2021 03:30:35 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:30:47 INFO epoch 5 training [time: 12.54s, train loss:645.7165]
+Thu 19 Aug 2021 03:30:58 INFO epoch 5 evaluating [time: 10.39s, valid_score: 0.622800]
+Thu 19 Aug 2021 03:30:58 INFO valid result:
+	gauc:	0.6228
+	p@5:	0.2024
+	r@5:	0.5991
+	mrr:	0.4515
+Thu 19 Aug 2021 03:30:59 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:31:10 INFO epoch 6 training [time: 11.23s, train loss:644.7821]
+Thu 19 Aug 2021 03:31:20 INFO epoch 6 evaluating [time: 10.41s, valid_score: 0.623300]
+Thu 19 Aug 2021 03:31:20 INFO valid result:
+	gauc:	0.6233
+	p@5:	0.2022
+	r@5:	0.5987
+	mrr:	0.4521
+Thu 19 Aug 2021 03:31:21 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:31:32 INFO epoch 7 training [time: 10.77s, train loss:643.3896]
+Thu 19 Aug 2021 03:31:42 INFO epoch 7 evaluating [time: 9.66s, valid_score: 0.623100]
+Thu 19 Aug 2021 03:31:42 INFO valid result:
+	gauc:	0.6231
+	p@5:	0.2021
+	r@5:	0.5988
+	mrr:	0.4519
+Thu 19 Aug 2021 03:31:52 INFO epoch 8 training [time: 10.58s, train loss:641.4953]
+Thu 19 Aug 2021 03:32:02 INFO epoch 8 evaluating [time: 10.27s, valid_score: 0.623500]
+Thu 19 Aug 2021 03:32:02 INFO valid result:
+	gauc:	0.6235
+	p@5:	0.2023
+	r@5:	0.5994
+	mrr:	0.4523
+Thu 19 Aug 2021 03:32:03 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:32:15 INFO epoch 9 training [time: 11.68s, train loss:639.0527]
+Thu 19 Aug 2021 03:32:25 INFO epoch 9 evaluating [time: 9.95s, valid_score: 0.623600]
+Thu 19 Aug 2021 03:32:25 INFO valid result:
+	gauc:	0.6236
+	p@5:	0.2023
+	r@5:	0.5990
+	mrr:	0.4520
+Thu 19 Aug 2021 03:32:26 INFO Saving current best: ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:32:37 INFO epoch 10 training [time: 11.32s, train loss:636.1429]
+Thu 19 Aug 2021 03:32:48 INFO epoch 10 evaluating [time: 10.60s, valid_score: 0.623300]
+Thu 19 Aug 2021 03:32:48 INFO valid result:
+	gauc:	0.6233
+	p@5:	0.2024
+	r@5:	0.5992
+	mrr:	0.4524
+Thu 19 Aug 2021 03:32:58 INFO epoch 11 training [time: 10.58s, train loss:632.7322]
+Thu 19 Aug 2021 03:33:09 INFO epoch 11 evaluating [time: 10.43s, valid_score: 0.623200]
+Thu 19 Aug 2021 03:33:09 INFO valid result:
+	gauc:	0.6232
+	p@5:	0.2023
+	r@5:	0.5989
+	mrr:	0.4523
+Thu 19 Aug 2021 03:33:20 INFO epoch 12 training [time: 11.02s, train loss:628.8738]
+Thu 19 Aug 2021 03:33:30 INFO epoch 12 evaluating [time: 9.83s, valid_score: 0.623000]
+Thu 19 Aug 2021 03:33:30 INFO valid result:
+	gauc:	0.6230
+	p@5:	0.2022
+	r@5:	0.5983
+	mrr:	0.4525
+Thu 19 Aug 2021 03:33:40 INFO epoch 13 training [time: 10.17s, train loss:624.6455]
+Thu 19 Aug 2021 03:33:50 INFO epoch 13 evaluating [time: 9.78s, valid_score: 0.622900]
+Thu 19 Aug 2021 03:33:50 INFO valid result:
+	gauc:	0.6229
+	p@5:	0.2023
+	r@5:	0.5985
+	mrr:	0.4521
+Thu 19 Aug 2021 03:34:01 INFO epoch 14 training [time: 11.55s, train loss:620.2701]
+Thu 19 Aug 2021 03:34:11 INFO epoch 14 evaluating [time: 10.32s, valid_score: 0.622800]
+Thu 19 Aug 2021 03:34:11 INFO valid result:
+	gauc:	0.6228
+	p@5:	0.2024
+	r@5:	0.5985
+	mrr:	0.4527
+Thu 19 Aug 2021 03:34:23 INFO epoch 15 training [time: 11.64s, train loss:615.8573]
+Thu 19 Aug 2021 03:34:33 INFO epoch 15 evaluating [time: 10.22s, valid_score: 0.622600]
+Thu 19 Aug 2021 03:34:33 INFO valid result:
+	gauc:	0.6226
+	p@5:	0.2024
+	r@5:	0.5991
+	mrr:	0.4526
+Thu 19 Aug 2021 03:34:33 INFO Finished training, best eval result in epoch 9
+Thu 19 Aug 2021 03:34:33 INFO best valid result: {'p@5': 0.2023, 'r@5': 0.599, 'mrr': 0.452, 'gauc': 0.6236}
+Thu 19 Aug 2021 03:34:34 INFO Loading model structure and parameters from ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:34:44 INFO test for user result [all]: 
+	gauc:	0.6395
+	p@5:	0.1973
+	r@5:	0.5794
+	mrr:	0.4368
+Thu 19 Aug 2021 03:34:44 INFO Loading model structure and parameters from ./saved/NCF-Aug-19-2021_03-28-09.pth
+Thu 19 Aug 2021 03:34:51 INFO test for job result [all]: 
+	gauc:	0.5571
+	p@5:	0.3103
+	r@5:	0.5998
+	mrr:	0.5372
