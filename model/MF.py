@@ -6,7 +6,7 @@ from model.abstract import PJFModel
 
 
 class MF(PJFModel):
-    def __init__(self, config, pool, dataset):
+    def __init__(self, config, pool):
 
         super(MF, self).__init__(config, pool)
 

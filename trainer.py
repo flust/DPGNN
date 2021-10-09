@@ -298,7 +298,8 @@ class Trainer(object):
         score_file = None
         if save_score:
             model_name = self.config['model']
-            score_file = open(f'{model_name}.score', 'w', encoding='utf-8')
+            tag = 'job' if reverse else 'user'
+            score_file = open(f'{model_name}.score.{tag}', 'w', encoding='utf-8')
 
         if load_best_model:
             if model_file:
@@ -323,13 +324,17 @@ class Trainer(object):
 
         for batch_idx, batched_data in iter_data:
             interaction = batched_data
-            # import pdb
-            # pdb.set_trace()
-
             scores = self.model.predict(dict2device(interaction, self.device))
-            if save_score:
-                for s in scores.cpu().numpy():
-                    score_file.write(f'{s}\n')
+            # if save_score:
+            #     for gid, jid, label, score in zip(interaction['geek_id'], 
+            #                                     interaction['job_id'],
+            #                                     interaction['label'],
+            #                                     scores):
+            #         line = '\t'.join([str(gid.item()), 
+            #                             str(jid.item()), 
+            #                             str(label.item()), 
+            #                             str(score.item())]) + '\n'
+            #         score_file.write(line)
 
             batch_matrix = self.evaluator.collect(interaction, scores, reverse)
             batch_matrix_list.append(batch_matrix)

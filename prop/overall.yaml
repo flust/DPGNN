@@ -8,8 +8,8 @@ epochs: 3000 # 300
 eval_step: 1
 stopping_step: 5
 clip_grad_norm: ~
-pos_weight: 8.633  # 无开聊数据
-# pos_weight: 1.200 # 开聊数据作为正例加入训练
+pos_weight: 8.633  # 
+# pos_weight: 0.6267 # 开聊数据作为正例加入训练
 
 # Evaluation
 topk: [5]
@@ -21,8 +21,9 @@ pin_memory: True
 
 # General
 checkpoint_dir: ./saved/
+# dataset_path: /home/yangchen/dataset/job/cikm/order_analysis
+# dataset_path: /home/yangchen/dataset/job/cikm/ml-1m
 dataset_path: /home/yangchen/dataset/job/cikm/final_dir
-# dataset_path: /home/yangchen/dataset/job/cikm/final_dir2
 loss_decimal_place: 4
 metric_decimal_place: 4
 

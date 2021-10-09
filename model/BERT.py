@@ -7,7 +7,7 @@ from model.layer import MLPLayers
 
 
 class BERT(PJFModel):
-    def __init__(self, config, pool, dataset):
+    def __init__(self, config, pool):
 
         super(BERT, self).__init__(config, pool)
 

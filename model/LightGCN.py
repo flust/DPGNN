@@ -3,10 +3,6 @@ import scipy.sparse as sp
 import torch
 import torch.nn as nn
 
-# from recbole.model.init import xavier_uniform_initialization
-# from recbole.model.loss import BPRLoss, EmbLoss
-# from recbole.utils import InputType
-
 from torch.nn.init import xavier_normal_
 from model.abstract import PJFModel
 from scipy.sparse import coo_matrix
@@ -25,11 +21,11 @@ class BPRLoss(nn.Module):
 class LightGCN(PJFModel):
     # input_type = InputType.PAIRWISE
 
-    def __init__(self, config, pool, dataset):
+    def __init__(self, config, pool):
         super(LightGCN, self).__init__(config, pool)
 
         # load dataset info
-        self.interaction_matrix = dataset.interaction_matrix.astype(np.float32)
+        self.interaction_matrix = pool.interaction_matrix.astype(np.float32)
         self.n_users = pool.geek_num
         self.n_items = pool.job_num
         self.USER_ID = 'geek_id'

@@ -97,7 +97,7 @@ class GeekLayer(nn.Module):
         return g
 
 class APJFNN(PJFModel):
-    def __init__(self, config, pool, data_set):
+    def __init__(self, config, pool):
         super(APJFNN, self).__init__(config, pool)
         self.embedding_size = config['embedding_size']
 

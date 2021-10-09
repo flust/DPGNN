@@ -8,8 +8,8 @@ from model.layer import MLPLayers
 
 class NCF(PJFModel):
 
-    def __init__(self, config, pool, dataset):
-        super(NCF, self).__init__(config, dataset)
+    def __init__(self, config, pool):
+        super(NCF, self).__init__(config)
 
         # load parameters info
         # self.mf_embedding_size = config['mf_embedding_size']

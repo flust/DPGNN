@@ -6,7 +6,6 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from scipy.sparse import coo_matrix
 
 from utils import dynamic_load
 import random
@@ -21,14 +20,15 @@ def create_datasets(config, pool):
         data_list.extend(['train_j', 'valid_j', 'test_j'])
     else:
         # others: train model on full data
+        # origin data
         data_list.extend(['train_all', 'valid_g', 'test_g'])
+        
+        # train data add: user_add / job_add  加入开聊数据做训练
+        # data_list.extend(['train_all_add', 'valid_g', 'test_g'])
     
     # test set for geek & test set for job
     data_list.extend(['test_g', 'test_j'])
 
-    # graph build dataset (geek / job)
-    data_list.extend(['train_g', 'train_j'])
-    data_list.extend(['user_add','job_add'])
     return [
         dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, phase)
         for phase in data_list
@@ -44,11 +44,6 @@ class PJFDataset(Dataset):
 
         self._init_attributes(pool)
         self._load_inters()
-
-        src = self.geek_ids[self.labels == 1]
-        tgt = self.job_ids[self.labels == 1]
-        data = self.labels[self.labels == 1]
-        self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
 
     def _init_attributes(self, pool):
         self.geek_num = pool.geek_num
@@ -73,6 +68,7 @@ class PJFDataset(Dataset):
         self.geek_ids = torch.LongTensor(self.geek_ids)
         self.job_ids = torch.LongTensor(self.job_ids)
         self.labels = torch.FloatTensor(self.labels)
+
 
     def __len__(self):
         return self.labels.shape[0]
@@ -106,10 +102,6 @@ class NCFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(NCFDataset, self).__init__(config, pool, phase)
 
-class MultiMFDataset(PJFDataset):
-    def __init__(self, config, pool, phase):
-        super(MultiMFDataset, self).__init__(config, pool, phase)
-
 
 class LightGCNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
@@ -119,6 +111,52 @@ class LightGCNDataset(PJFDataset):
 class MultiGCNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(MultiGCNDataset, self).__init__(config, pool, phase)
+
+
+class BGPJFDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(BGPJFDataset, self).__init__(config, pool, phase)
+        self.pool = pool 
+
+    def __getitem__(self, index):
+        self.sample_n = self.pool.sample_n
+
+        g = self.geek_ids[index]
+        if g not in self.pool.geek2jobs.keys():
+            self.geek2jobs = [self.job_num - 1] * self.sample_n
+        elif len(self.pool.geek2jobs[g]) < self.sample_n:
+            self.geek2jobs = self.pool.geek2jobs[g].extend([self.job_num - 1] * \
+                (self.sample_n - len(self.pool.geek2jobs[g])))
+        else:
+            self.geek2jobs = random.sample(self.pool.geek2jobs[g], self.sample_n)
+
+        j = self.job_ids[index]
+        if j not in self.pool.job2geeks.keys():
+            self.job2geeks = [self.geek_num - 1] * self.sample_n
+        elif len(self.pool.job2geeks[j]) < self.sample_n:
+            self.job2geeks = self.pool.job2geeks[j].extend([self.geek_num - 1] * \
+                (self.sample_n - len(self.pool.job2geeks[j])))
+        else:
+            self.job2geeks = random.sample(self.pool.job2geeks[j], self.sample_n)
+
+        self.geek2jobs = torch.Tensor(self.geek2jobs)
+        self.job2geeks = torch.Tensor(self.job2geeks)
+        
+        if self.phase[-3:] == 'add':
+            return {
+                'geek_id': self.geek_ids[index],
+                'job_id': self.job_ids[index],
+                'geek2jobs': None,
+                'job2geeks': None,
+                'label': self.labels[index]               
+            }
+        return {
+            'geek_id': self.geek_ids[index],
+            'job_id': self.job_ids[index],
+            'geek2jobs': self.geek2jobs,
+            'job2geeks': self.job2geeks,
+            'label': self.labels[index]
+        }
 
 
 class BPJFNNDataset(PJFDataset):
@@ -165,6 +203,12 @@ class PJFNNDataset(PJFDataset):
             'job_sents': self.job_sents[job_id],
             'label': self.labels[index]
         }
+
+
+class IPJFDataset(PJFNNDataset):
+    def __init__(self, config, pool, phase):
+        super(IPJFDataset, self).__init__(config, pool, phase)
+
 
 class APJFNNDataset(PJFNNDataset):
     def __init__(self, config, pool, phase):
@@ -274,6 +318,12 @@ class MultiPJFDataset(BERTDataset):
     #         super(BERTDataset, self).__str__(),
     #         f'bert_vec: {self.bert_vec.shape}'
     #     ])
+
+
+class JRMPMDataset(PJFDataset):
+    def __init__(self, config, pool, phase):
+        super(JRMPMDataset, self).__init__(config, pool, phase)
+        self.pool = pool
 
 
 class RawVPJFDataset(PJFDataset):

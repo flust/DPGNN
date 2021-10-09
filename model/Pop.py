@@ -4,7 +4,7 @@ from model.abstract import PJFModel
 
 
 class Pop(PJFModel):
-    def __init__(self, config, pool, dataset):
+    def __init__(self, config, pool):
         super(Pop, self).__init__(config, pool)
 
         self.item_cnt = torch.nn.Parameter(

@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import random
+import pdb
+from scipy.sparse import coo_matrix
 
 
 class PJFPool(object):
@@ -53,20 +55,85 @@ class NCFPool(PJFPool):
     def __init__(self, config):
         super(NCFPool, self).__init__(config)
 
-class MultiMFPool(PJFPool):
-    def __init__(self, config):
-        super(MultiMFPool, self).__init__(config)
-
-
 class LightGCNPool(PJFPool):
     def __init__(self, config):
         super(LightGCNPool, self).__init__(config)
+        self._load_edge()
+    
+    def _load_edge(self):
+        filepath = os.path.join(self.config['dataset_path'], f'data.train_all')
+        self.logger.info(f'Loading from {filepath}')
 
+        self.geek_ids, self.job_ids, self.labels = [], [], []
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in tqdm(file):
+                geek_token, job_token, label = line.strip().split('\t')[:3]
+                geek_id = self.geek_token2id[geek_token]
+                self.geek_ids.append(geek_id)
+                job_id = self.job_token2id[job_token]
+                self.job_ids.append(job_id)
+                self.labels.append(int(label))
+        self.geek_ids = torch.LongTensor(self.geek_ids)
+        self.job_ids = torch.LongTensor(self.job_ids)
+        self.labels = torch.FloatTensor(self.labels)
+
+        src = self.geek_ids[self.labels == 1]
+        tgt = self.job_ids[self.labels == 1]
+        data = self.labels[self.labels == 1]
+        self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
 
 class MultiGCNPool(PJFPool):
     def __init__(self, config):
         super(MultiGCNPool, self).__init__(config)
-    
+        self.success_edge = self._get_edge(os.path.join(self.config['dataset_path'], f'data.train_all'))
+        self.user_add_edge = self._get_edge(os.path.join(self.config['dataset_path'], f'data.user_add'))
+        self.job_add_edge = self._get_edge(os.path.join(self.config['dataset_path'], f'data.job_add'))
+
+    def _get_edge(self, filepath):
+        self.geek_ids, self.job_ids, self.labels = [], [], []
+
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in tqdm(file):
+                geek_token, job_token, label = line.strip().split('\t')[:3]
+                if(int(label) == 0): continue
+                geek_id = self.geek_token2id[geek_token]
+                self.geek_ids.append(geek_id)
+                job_id = self.job_token2id[job_token]
+                self.job_ids.append(job_id)
+                self.labels.append(int(label))
+
+        self.geek_ids = torch.LongTensor(self.geek_ids)
+        self.job_ids = torch.LongTensor(self.job_ids)
+        self.labels = torch.FloatTensor(self.labels)
+
+        return [self.geek_ids, self.job_ids]
+
+
+class BGPJFPool(MultiGCNPool):
+    def __init__(self, config):
+        super(BGPJFPool, self).__init__(config)
+        self.sample_n = config['sample_n']
+        self._load_group()
+
+    def _load_group(self):
+        self.geek2jobs = {}
+        self.job2geeks = {}
+        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
+        for l in data_all:
+            gid, jid, label = l.split('\t')
+            if label == '0\n':
+                continue
+            gid = self.geek_token2id[gid]
+            jid = self.job_token2id[jid]
+            if gid not in self.geek2jobs.keys():
+                self.geek2jobs[gid] = [jid]
+            else:
+                self.geek2jobs[gid].append(jid)
+            if jid not in self.job2geeks.keys():
+                self.job2geeks[jid] = [gid]
+            else:
+                self.job2geeks[jid].append(gid)
+
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):
@@ -231,6 +298,7 @@ class BPJFNNPool(PJFPool):
 class PJFNNPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
+        # pdb.set_trace()
         self._load_word_cnt()
         self._load_sents()
 
@@ -263,6 +331,69 @@ class PJFNNPool(PJFPool):
             tensor_size = [max_sent_num, max_sent_len]
             token2id = getattr(self, f'{target}_token2id')
             self.logger.info(f'Loading {filepath}')
+
+            # 看一下平均句子数量和平均句子长度
+            sent_num_sum = 0  # 句子数量  
+            sent_len_sum = 0  # 句子长度
+            user_num_count = 0  # 
+            with open(filepath, 'r', encoding='utf-8') as file:
+                for line in tqdm(file):
+                    try:
+                        token, sent = line.strip().split('\t')
+                    except:
+                        continue
+                    if token not in token2id:
+                        continue
+                    idx = token2id[token]
+                    if idx not in sents:
+                        sents[idx] = torch.zeros(tensor_size).long()
+                        sent_num[idx] = 0
+                        user_num_count += 1
+                    if sent_num[idx] == tensor_size[0]: continue
+                    sent_len_sum += len(sent.split(' '))
+                    sent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in sent.split(' ')])
+                    sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))   # sents[idx] 第idx个用户的多个句子组成的 tensor 矩阵
+                    sent_num[idx] += 1    # sent_num[idx] 第idx个用户的句子个数
+                    sent_num_sum += 1
+
+            pdb.set_trace()
+            avg_sent_num = sent_num_sum / user_num_count   # 2.606
+            avg_sent_len = sent_len_sum / sent_num_sum   # 13.939
+            
+            setattr(self, f'{target}_sents', sents)
+            setattr(self, f'{target}_sent_num', sent_num)
+            
+class IPJFPool(PJFNNPool):
+    def __init__(self, config):
+        super(IPJFPool, self).__init__(config)
+
+class APJFNNPool(PJFNNPool):
+    def __init__(self, config):
+        super(APJFNNPool, self).__init__(config)
+
+class JRMPMPool(PJFNNPool):
+    def __init__(self, config):
+        super(JRMPMPool, self).__init__(config)
+        self._load_word_emb()
+        self._load_jrmpm_ids()
+        
+    def _load_word_emb(self):
+        self.wordemb = np.load(os.path.join(self.config['dataset_path'], 'word.emb.npy'))
+        z = np.zeros((2, self.wordemb.shape[1]))
+        self.wordemb = np.vstack((z, self.wordemb))
+        self.wordemb = torch.FloatTensor(self.wordemb)
+
+    def _load_sents(self):
+        for target in ['geek', 'job']:
+            filepath = os.path.join(self.config['dataset_path'], f'{target}.sent')
+            max_sent_num = self.config[f'{target}_max_sent_num']
+            max_sent_len = self.config[f'{target}_max_sent_len']
+
+            sents = {}
+            sent_num = {}
+            tensor_size = [max_sent_num, max_sent_len]
+            token2id = getattr(self, f'{target}_token2id')
+            self.logger.info(f'Loading {filepath}')
             with open(filepath, 'r', encoding='utf-8') as file:
                 for line in tqdm(file):
                     try:
@@ -277,14 +408,75 @@ class PJFNNPool(PJFPool):
                         sent_num[idx] = 0
                     if sent_num[idx] == tensor_size[0]: continue
                     sent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in sent.split(' ')])
-                    sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))
-                    sent_num[idx] += 1
+                    sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))   # sents[idx] 第idx个用户的多个句子组成的 tensor 矩阵
+                    sent_num[idx] += 1    # sent_num[idx] 第idx个用户的句子个数
+            sents['0'] = torch.zeros(tensor_size).long()
+            sent_num['0'] = 0
             setattr(self, f'{target}_sents', sents)
-            
+            setattr(self, f'{target}_sent_num', sent_num)
 
-class APJFNNPool(PJFNNPool):
-    def __init__(self, config):
-        super(APJFNNPool, self).__init__(config)
+    def _load_jrmpm_ids(self):
+        f = open(os.path.join(self.config['dataset_path'], 'data.train_all'))
+        self.job_dt = {}
+        self.geek_dt = {}
+        for l in f:
+            gtoken, jtoken, label = l.split('\t')
+            if label == '0\n':
+                continue
+            gid = self.geek_token2id[gtoken]
+            jid = self.job_token2id[jtoken]
+
+            if jid not in self.job_dt.keys():
+                self.job_dt[jid] = {
+                    'history': [gid],
+                    'his_number': 1
+                }
+            self.job_dt[jid]['history'].append(gid)
+            self.job_dt[jid]['his_number'] += 1
+
+            if gid not in self.geek_dt.keys():
+                self.geek_dt[gid] = {
+                    'history': [jid],
+                    'his_number': 1
+                }
+            self.geek_dt[gid]['history'].append(jid)
+            self.geek_dt[gid]['his_number'] += 1
+
+        self.job_id = {}
+        self.resume_id = {}
+        for jid in self.job_sents.keys():
+            self.job_id[jid] = {
+                'id': self.job_sents[jid].tolist(),
+                'length': self.job_sent_num[jid]
+            }
+            
+            if jid not in self.job_dt.keys():
+                self.job_dt[jid] = {
+                    'history': ['0'] * 10,
+                    'his_number': 1
+                }
+            elif len(self.job_dt[jid]['history']) < 10:
+                self.job_dt[jid]['history'].extend(['0'] * (10 - len(self.job_dt[jid]['history'])))
+            else:
+                self.job_dt[jid]['history'] = self.job_dt[jid]['history'][:10]
+                self.job_dt[jid]['his_number'] = 10
+
+        for gid in self.geek_sents.keys():
+            self.resume_id[gid] = {
+                'id': self.geek_sents[gid].tolist(),
+                'length': self.geek_sent_num[gid]
+            }
+
+            if gid not in self.geek_dt.keys():
+                self.geek_dt[gid] = {
+                    'history': ['0'] * 10,
+                    'his_number': 1
+                }
+            elif len(self.geek_dt[gid]['history']) < 10:
+                self.geek_dt[gid]['history'].extend(['0'] * (10 - len(self.geek_dt[gid]['history'])))
+            else:
+                self.geek_dt[gid]['history'] = self.geek_dt[gid]['history'][:10]
+                self.geek_dt[gid]['his_number'] = 10
 
 
 class VPJFPool(BPJFNNPool):
@@ -330,3 +522,5 @@ class VPJFPool(BPJFNNPool):
 class VPJFv9Pool(VPJFPool):
     def __init__(self, config):
         super(VPJFv9Pool, self).__init__(config)
+
+

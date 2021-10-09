@@ -1,6 +1,5 @@
 from model.Pop import Pop
 from model.MF import MF
-from model.MultiMF import MultiMF
 from model.PJFNN import PJFNN
 from model.BPJFNN import BPJFNN
 from model.APJFNN import APJFNN
@@ -10,3 +9,6 @@ from model.LightGCN import LightGCN
 from model.MultiGCN import MultiGCN
 from model.MultiPJF import MultiPJF
 from model.NCF import NCF
+from model.JRMPM import JRMPM
+from model.IPJF import IPJF
+from model.BGPJF import BGPJF

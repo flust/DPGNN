@@ -59,17 +59,9 @@ def main_process(model, config_dict=None, saved=True):
 
     # load dataset
     train_data, valid_data, test_data, test_data_g, test_data_j = construct_dataloader(config, datasets)
-
-    data_sets = datasets[0]
-    if config['model'] == 'MultiGCN' or config['model'] == 'MultiPJF':
-        data_sets = {'train_g':datasets[-4],
-                    'train_j':datasets[-3],
-                    'add_user':datasets[-2],
-                    'add_job':datasets[-1]
-        }
         
     # model loading and initialization
-    model = dynamic_load(config, 'model')(config, pool, data_sets).to(config['device'])
+    model = dynamic_load(config, 'model')(config, pool).to(config['device'])
     # print(os.environ["CUDA_VISIBLE_DEVICES"])
 
     logger.info(model)

@@ -7,9 +7,9 @@ from model.abstract import PJFModel
 from model.layer import GCNConv
 
 
-class MultiGCN(PJFModel):
+class BGPJF(PJFModel):
     def __init__(self, config, pool):
-        super(MultiGCN, self).__init__(config, pool)
+        super(BGPJF, self).__init__(config, pool)
         self.config = config
         self.n_users = pool.geek_num
         self.n_items = pool.job_num

@@ -216,7 +216,7 @@ class MultiPJF(PJFModel):
 
     def get_star(self, ids, e_c, e_p, direction):
         ids = ids.tolist()
-        ids = [n for a in ids for n in a]
+        ids = [n for a in ids for n in a]  # 把 key 取出来
 
         p_star_origin = e_p[ids].detach()
         p_star_origin = p_star_origin.reshape(-1, self.pool.sample_n, e_p.shape[1]) # [4096, 3, embedding_size]

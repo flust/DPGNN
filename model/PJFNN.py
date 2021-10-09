@@ -28,13 +28,15 @@ class TextCNN(nn.Module):
             raise ValueError('method {} not exist'.format(method))
 
     def forward(self, x):
-        x = self.net1(x)
-        x = self.net2(x).squeeze(2)
-        x = self.pool(x).squeeze(1)
+        # import pdb
+        # pdb.set_trace()   # [2048, 20, 30, 64]
+        x = self.net1(x)  # [2048, 20, 13, 64]
+        x = self.net2(x).squeeze(2) # [2048, 20, 64]
+        x = self.pool(x).squeeze(1) # [2048, 64]
         return x
 
 class PJFNN(PJFModel):
-    def __init__(self, config, pool, data_set):
+    def __init__(self, config, pool):
         super(PJFNN, self).__init__(config, pool)
         self.embedding_size = config['embedding_size']
         self.geek_channels = config['geek_max_sent_num'] #20
