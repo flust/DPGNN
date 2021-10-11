@@ -6,16 +6,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 from model.abstract import PJFModel
 from scipy.sparse import coo_matrix
-
-
-class BPRLoss(nn.Module):
-    def __init__(self, gamma=1e-10):
-        super(BPRLoss, self).__init__()
-        self.gamma = gamma
-
-    def forward(self, pos_score, neg_score):
-        loss = -torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
-        return loss
+from model.layer import BPRLoss
 
 
 class LightGCN(PJFModel):

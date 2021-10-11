@@ -4,8 +4,18 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 from torch.nn.init import normal_
 from model.abstract import PJFModel
-from model.layer import GCNConv
+from model.layer import GCNConv, GATConv
 
+
+class BPRLoss(nn.Module):
+    def __init__(self, gamma=1e-10):
+        super(BPRLoss, self).__init__()
+        self.gamma = gamma
+
+    def forward(self, pos_score, neg_score):
+        loss = -torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        return loss
+        
 
 class BGPJF(PJFModel):
     def __init__(self, config, pool):
@@ -38,7 +48,8 @@ class BGPJF(PJFModel):
         # gcn layers
         gcn_modules = []
         for i in range(self.n_layers):
-            gcn_modules.append(GCNConv(self.latent_dim, self.latent_dim))
+            # gcn_modules.append(GCNConv(self.latent_dim, self.latent_dim))
+            gcn_modules.append(GATConv(self.latent_dim, self.latent_dim))
         self.gcn_layers = nn.Sequential(*gcn_modules)
 
         self.sigmoid = nn.Sigmoid()
@@ -98,7 +109,7 @@ class BGPJF(PJFModel):
         job_addfriend_edge = self.get_edge(self.job_add_edge, u_p=False, j_p=True)
                                
         # geek_p <-> geek_c  &&  job_p <-> job_c
-        self_edge = self.get_self_edge()
+        # self_edge = self.get_self_edge()
 
         # combine all edges
         # edges = torch.cat((user_success_edge, 
@@ -108,8 +119,7 @@ class BGPJF(PJFModel):
         #                     self_edge), 1)
         edges = torch.cat((success_edge,
                             user_addfriend_edge,
-                            job_addfriend_edge,
-                            self_edge), 1)
+                            job_addfriend_edge), 1)
         # make edges bidirected
         # edges = torch.cat((edges, edges[[1,0]]), 1)
         return edges
@@ -118,8 +128,8 @@ class BGPJF(PJFModel):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         if isinstance(module, nn.Linear):
-            if self.init_method == 'norm':
-                normal_(module.weight.data, 0, 0.01)
+            # if self.init_method == 'norm':
+            normal_(module.weight.data, 0, 0.01)
             if module.bias is not None:
                 module.bias.data.fill_(0.0)
 
@@ -179,12 +189,27 @@ class BGPJF(PJFModel):
         scores = self.calculate_score(interaction)
         return self.sigmoid(scores)
 
+    def mutual_loss(self, interaction):
+        pass
+
+    def bilateral_loss(self, interaction):
+        return 0
+        job_p_star, job_c_star = self.get_star(interaction['geek2jobs'],
+                                        item_e_c, item_e_p, 0)
+        geek_p_star, geek_c_star = self.get_star(interaction['job2geeks'],
+                                        user_e_c, user_e_p, 1)
+
     def calculate_loss(self, interaction):
         # calculate BPR Loss
         scores = self.calculate_score(interaction)
         label = interaction['label']
         # scores = self.sigmoid(scores)
-        return self.loss(scores, label)
+        return self.loss(self.sigmoid(scores),label)
+
+        loss = self.loss(self.sigmoid(scores),label)\
+                + self.mutual_loss(interaction)\
+                + self.bilateral_loss(interaction)
+        return loss
 
 
 
