@@ -5,7 +5,7 @@ from torch.nn.init import xavier_normal_
 from torch.nn.init import normal_
 from model.abstract import PJFModel
 from model.layer import GCNConv, GATConv
-
+import pdb
 
 class BPRLoss(nn.Module):
     def __init__(self, gamma=1e-10):
@@ -21,6 +21,7 @@ class BGPJF(PJFModel):
     def __init__(self, config, pool):
         super(BGPJF, self).__init__(config, pool)
         self.config = config
+        self.pool = pool
         self.n_users = pool.geek_num
         self.n_items = pool.job_num
 
@@ -34,12 +35,14 @@ class BGPJF(PJFModel):
 
         # create edges
         self.edge_index = self.create_edge().to(config['device'])
+        # self.edge_matrix = [] * 2 * (self.n_users + self.n_items)
 
         # layers
         self.user_embedding_c = nn.Embedding(self.n_users, self.latent_dim)
         self.item_embedding_c = nn.Embedding(self.n_items, self.latent_dim)
         self.user_embedding_p = nn.Embedding(self.n_users, self.latent_dim)
         self.item_embedding_p = nn.Embedding(self.n_items, self.latent_dim)
+
         # bias
         self.geek_b = nn.Embedding(self.geek_num, 1)
         self.job_b = nn.Embedding(self.job_num, 1)
@@ -163,14 +166,9 @@ class BGPJF(PJFModel):
                     [self.n_users, self.n_items, self.n_users, self.n_items])
         return user_e_p, item_e_c, user_e_c, item_e_p
 
-    def calculate_score(self, interaction):
+    def calculate_score(self, user, item):
         r"""calculate score for user and item
-
-        Returns:
-            torch.mul(user_embedding, item_embedding)
         """
-        user = interaction['geek_id']
-        item = interaction['job_id']
         user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
 
         u_e_c = user_e_c[user]
@@ -186,25 +184,62 @@ class BGPJF(PJFModel):
         return scores
 
     def predict(self, interaction):
-        scores = self.calculate_score(interaction)
+        user = interaction['geek_id']
+        item = interaction['job_id']
+        scores = self.calculate_score(user, item)
         return self.sigmoid(scores)
 
     def mutual_loss(self, interaction):
         pass
 
-    def bilateral_loss(self, interaction):
-        return 0
-        job_p_star, job_c_star = self.get_star(interaction['geek2jobs'],
-                                        item_e_c, item_e_p, 0)
-        geek_p_star, geek_c_star = self.get_star(interaction['job2geeks'],
-                                        user_e_c, user_e_p, 1)
+    def bilateral_loss(self, scores, interaction):
+        # pdb.set_trace()
+        pos_idx = interaction['label'] == 1
+        pos_geek = interaction['geek_id'][pos_idx] # torch.Size([674])
+        pos_job = interaction['job_id'][pos_idx] # torch.Size([674])
+        pos_score = scores[pos_idx] # torch.Size([674])
+
+        # geek neg sample
+        g_n_idx = interaction['geek_neg_sample'][pos_idx]
+        geek_neg_list = torch.gather(self.pool.geek2jobs_neg[pos_geek].to(self.config['device']), 1, g_n_idx)
+
+        # job neg sample 
+        j_n_idx = interaction['job_neg_sample'][pos_idx]
+        job_neg_list = torch.gather(self.pool.job2geeks_neg[pos_job].to(self.config['device']), 1, j_n_idx)
+
+        # geek neg score
+        u_pos = (pos_geek.repeat(3,1).T).reshape(-1)
+        j_neg = geek_neg_list.view(-1).type(torch.long)
+        geek_neg_score = self.calculate_score(u_pos, j_neg)
+        geek_neg_score = geek_neg_score.reshape(pos_geek.shape[0], -1).mean(dim = 1)
+
+        # job neg score
+        u_neg = job_neg_list.view(-1).type(torch.long)
+        j_pos = (pos_job.repeat(3,1).T).reshape(-1)
+        job_neg_score = self.calculate_score(u_neg, j_pos)
+        job_neg_score = job_neg_score.reshape(pos_geek.shape[0], -1).mean(dim = 1)
+
+        neg_score = geek_neg_score + job_neg_score
+        self.BPRLoss = BPRLoss()
+        loss = self.BPRLoss(pos_score, neg_score)
+        return loss
 
     def calculate_loss(self, interaction):
         # calculate BPR Loss
-        scores = self.calculate_score(interaction)
-        label = interaction['label']
+        user = interaction['geek_id']
+        item = interaction['job_id']
+        scores = self.calculate_score(user, item)
+
+        label = interaction['label']  # 4096
+
+        scores = self.sigmoid(scores)
+
+        main_loss = self.loss(scores, label)
+        bilateral_loss = self.bilateral_loss(scores, interaction)
+        mutual_loss = self.mutual_loss(interaction)
+
         # scores = self.sigmoid(scores)
-        return self.loss(self.sigmoid(scores),label)
+        return main_loss + bilateral_loss
 
         loss = self.loss(self.sigmoid(scores),label)\
                 + self.mutual_loss(interaction)\

@@ -1,5 +1,6 @@
 import os
 from logging import getLogger
+from typing import DefaultDict
 
 from tqdm import tqdm
 import numpy as np
@@ -113,27 +114,27 @@ class BGPJFPool(MultiGCNPool):
     def __init__(self, config):
         super(BGPJFPool, self).__init__(config)
         self.sample_n = config['sample_n']
-        self._load_group()
+        self._load_neg()
 
-    def _load_group(self):
-        self.geek2jobs = {}
-        self.job2geeks = {}
+    def _load_neg(self):
+        self.geek2jobs_neg = torch.zeros(self.geek_num, 1000)
+        self.geek2jobs_neg_num = DefaultDict(int)
+        self.job2geeks_neg = torch.zeros(self.job_num, 1000)
+        self.job2geeks_neg_num = DefaultDict(int)
+
         data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
-        for l in data_all:
+        for l in tqdm(data_all):
             gid, jid, label = l.split('\t')
-            if label == '0\n':
+            if label == '1\n':
                 continue
             gid = self.geek_token2id[gid]
             jid = self.job_token2id[jid]
-            if gid not in self.geek2jobs.keys():
-                self.geek2jobs[gid] = [jid]
-            else:
-                self.geek2jobs[gid].append(jid)
-            if jid not in self.job2geeks.keys():
-                self.job2geeks[jid] = [gid]
-            else:
-                self.job2geeks[jid].append(gid)
-
+            # pdb.set_trace()
+            self.geek2jobs_neg[gid][self.geek2jobs_neg_num[gid]] = jid
+            self.geek2jobs_neg_num[gid] += 1
+            self.job2geeks_neg[jid][self.job2geeks_neg_num[gid]] = gid
+            self.job2geeks_neg_num[jid] += 1
+            
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):
