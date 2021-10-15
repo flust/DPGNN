@@ -116,6 +116,7 @@ class BGPJFPool(MultiGCNPool):
         super(BGPJFPool, self).__init__(config)
         self.sample_n = config['sample_n']
         self._load_neg()
+        self._load_bert()
 
     def _load_neg(self):
         self.geek2jobs_neg = torch.zeros(self.geek_num, 1000)
@@ -135,7 +136,32 @@ class BGPJFPool(MultiGCNPool):
             self.geek2jobs_neg_num[gid] += 1
             self.job2geeks_neg[jid][self.job2geeks_neg_num[gid]] = gid
             self.job2geeks_neg_num[jid] += 1
-            
+
+    def _load_bert(self):
+        u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
+        self.logger.info(f'Loading from {u_filepath}')
+        j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
+        # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+        self.logger.info(f'Loading from {j_filepath}')
+
+        u_array = np.load(u_filepath).astype(np.float64)
+        # add padding 
+        u_array = np.vstack([u_array, np.zeros((1, u_array.shape[1]))])
+
+        j_array = np.load(j_filepath).astype(np.float64)
+        # add padding
+        j_array = np.vstack([j_array, np.zeros((1, j_array.shape[1]))])
+
+        self.geek_token2bertid = {}
+        self.job_token2bertid = {}
+        for i in range(u_array.shape[0]):
+            self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
+        for i in range(j_array.shape[0]):
+            self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
+
+        self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
+        self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
+
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):
@@ -162,7 +188,7 @@ class BERTPool(PJFPool):
         super(BERTPool, self).__init__(config)
 
 
-class MultiPJFPool(PJFPool):
+class MultiPJFPool(MultiGCNPool):
     def __init__(self, config):
         super(MultiPJFPool, self).__init__(config)
         self.sample_n = config['sample_n']
@@ -208,7 +234,6 @@ class MultiPJFPool(PJFPool):
             setattr(self, f'{target}_num', len(id2token))
 
     def _load_bert(self):
-        # super(BERTDataset, self)._load_inters()
         u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
         self.logger.info(f'Loading from {u_filepath}')
         j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')

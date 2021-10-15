@@ -30,29 +30,37 @@ class BGPJF(PJFModel):
         self.job_add_edge = pool.job_add_edge
         
         # load parameters info 
-        self.latent_dim = config['embedding_size']  # int type:the embedding size of lightGCN
+        self.embedding_size = config['embedding_size']  # int type:the embedding size of lightGCN
         self.n_layers = config['n_layers']  # int type:the layer num of lightGCN
 
         # create edges
         self.edge_index = self.create_edge().to(config['device'])
-        # self.edge_matrix = [] * 2 * (self.n_users + self.n_items)
 
         # layers
-        self.user_embedding_c = nn.Embedding(self.n_users, self.latent_dim)
-        self.item_embedding_c = nn.Embedding(self.n_items, self.latent_dim)
-        self.user_embedding_p = nn.Embedding(self.n_users, self.latent_dim)
-        self.item_embedding_p = nn.Embedding(self.n_items, self.latent_dim)
+        self.user_embedding_c = nn.Embedding(self.n_users, self.embedding_size)
+        self.item_embedding_c = nn.Embedding(self.n_items, self.embedding_size)
+        self.user_embedding_p = nn.Embedding(self.n_users, self.embedding_size)
+        self.item_embedding_p = nn.Embedding(self.n_items, self.embedding_size)
 
         # bias
         self.geek_b = nn.Embedding(self.geek_num, 1)
         self.job_b = nn.Embedding(self.job_num, 1)
         self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
 
+        # bert part
+        self.ADD_BERT = config['ADD_BERT']
+        self.BERT_e_size = 0
+        if self.ADD_BERT:
+            self.BERT_e_size = config['BERT_output_size']
+            self.bert_lr = nn.Linear(config['BERT_embedding_size'],
+                        self.BERT_e_size).to(self.config['device'])
+            self._load_bert()
+
         # gcn layers
         gcn_modules = []
         for i in range(self.n_layers):
-            # gcn_modules.append(GCNConv(self.latent_dim, self.latent_dim))
-            gcn_modules.append(GATConv(self.latent_dim, self.latent_dim))
+            # gcn_modules.append(GCNConv(self.embedding_size, self.embedding_size))
+            gcn_modules.append(GATConv(self.embedding_size + self.BERT_e_size, self.embedding_size + self.BERT_e_size))
         self.gcn_layers = nn.Sequential(*gcn_modules)
 
         self.sigmoid = nn.Sigmoid()
@@ -61,6 +69,21 @@ class BGPJF(PJFModel):
         self.loss_fct = BPRLoss()
 
         self.apply(self._init_weights)
+
+    def _load_bert(self):
+        self.bert_user = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_users):
+            geek_token = self.pool.geek_id2token[i]
+            bert_id =  self.pool.geek_token2bertid[geek_token]
+            bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
+            self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
+
+        self.bert_job = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_items):
+            job_token = self.pool.job_id2token[i]
+            bert_id =  self.pool.job_token2bertid[job_token]
+            bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
+            self.bert_job = torch.cat([self.bert_job, bert_j_vec], dim=0)
 
     def get_edge(self, edges, u_p=True, j_p=True):
         geek_id_p = edges[0].unsqueeze(0)
@@ -150,10 +173,22 @@ class BGPJF(PJFModel):
         user_embeddings_p = self.user_embedding_p.weight
         item_embeddings_p = self.item_embedding_p.weight
 
-        return torch.cat([user_embeddings_p,
+        id_e = torch.cat([user_embeddings_p,
                             item_embeddings_c,
                             user_embeddings_c,
                             item_embeddings_p], dim=0)
+
+        if not self.ADD_BERT:
+            return id_e
+        else:
+            self.bert_u = self.bert_lr(self.bert_user)
+            self.bert_j = self.bert_lr(self.bert_job)
+
+            bert_e = torch.cat([self.bert_u,
+                                self.bert_j, 
+                                self.bert_u, 
+                                self.bert_j], dim = 0)
+            return torch.cat([id_e, bert_e], dim=1)
 
     def forward(self):
         all_embeddings = self.get_ego_embeddings()

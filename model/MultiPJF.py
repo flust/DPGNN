@@ -14,10 +14,14 @@ from operator import itemgetter
 import random
 
 class MultiPJF(PJFModel):
-    def __init__(self, config, pool, dataset):
+    def __init__(self, config, pool):
         super(MultiPJF, self).__init__(config, pool)
         self.config = config
-        self.dataset = dataset
+
+        self.success_edge = pool.success_edge
+        self.user_add_edge = pool.user_add_edge
+        self.job_add_edge = pool.job_add_edge
+
         self.n_users = pool.geek_num
         self.n_items = pool.job_num
         self.pool = pool
@@ -86,12 +90,11 @@ class MultiPJF(PJFModel):
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
         self.apply(self._init_weights)
 
-    def get_edge(self, data, u_p=True, j_p=True):
-        mask = (data.labels >= 1)
-        geek_id_p = data.geek_ids[mask].unsqueeze(0)
-        job_id_c = data.job_ids[mask].unsqueeze(0) + self.n_users
-        geek_id_c = data.geek_ids[mask].unsqueeze(0) + self.n_users + self.n_items
-        job_id_p = data.job_ids[mask].unsqueeze(0) + self.n_users + self.n_items + self.n_users
+    def get_edge(self, edges, u_p=True, j_p=True):
+        geek_id_p = edges[0].unsqueeze(0)
+        job_id_c = edges[1].unsqueeze(0) + self.n_users
+        geek_id_c = edges[0].unsqueeze(0) + self.n_users + self.n_items
+        job_id_p = edges[1].unsqueeze(0) + self.n_users + self.n_items + self.n_users
         
         u_p_edge = torch.cat((geek_id_p, job_id_c), 0)
         j_p_edge = torch.cat((job_id_p, geek_id_c), 0)
@@ -125,19 +128,22 @@ class MultiPJF(PJFModel):
         #   item p node: [~] (len: n_items)
 
         # In geek success data, geek_p <-> job_c  &&  geek_c <-> job_p
-        user_success_edge = self.get_edge(self.dataset['train_g'], u_p=True, j_p=True)
+        # user_success_edge = self.get_edge(self.dataset['train_g'], u_p=True, j_p=True)
 
         # In job success data, geek_c <-> job_p  &&  geek_p <-> job_c
-        job_success_edge = self.get_edge(self.dataset['train_j'], u_p=True, j_p=True)
-        
+        # job_success_edge = self.get_edge(self.dataset['train_j'], u_p=True, j_p=True)
+
+        # success edge, geek_c <-> job_p  &&  geek_p <-> job_c
+        success_edge = self.get_edge(self.success_edge, u_p=True, j_p=True)
+
         # In geek addfriend data, geek_p <-> job_c
-        user_addfriend_edge = self.get_edge(self.dataset['add_user'], u_p=True, j_p=False)
+        user_addfriend_edge = self.get_edge(self.user_add_edge, u_p=True, j_p=False)
 
         # In job addfriend data, geek_c <-> job_p
-        job_addfriend_edge = self.get_edge(self.dataset['add_job'], u_p=False, j_p=True)
+        job_addfriend_edge = self.get_edge(self.job_add_edge, u_p=False, j_p=True)
                                
         # geek_p <-> geek_c  &&  job_p <-> job_c
-        self_edge = self.get_self_edge()
+        # self_edge = self.get_self_edge()
 
         # combine all edges
         # edges = torch.cat((user_success_edge, 
@@ -145,12 +151,9 @@ class MultiPJF(PJFModel):
         #                     user_addfriend_edge,
         #                     job_addfriend_edge,
         #                     self_edge), 1)
-        edges = torch.cat((
-                            user_success_edge, 
-                            job_success_edge, 
+        edges = torch.cat((success_edge,
                             user_addfriend_edge,
-                            job_addfriend_edge,
-                            self_edge), 1)
+                            job_addfriend_edge), 1)
         # make edges bidirected
         # edges = torch.cat((edges, edges[[1,0]]), 1)
         return edges
