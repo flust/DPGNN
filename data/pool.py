@@ -68,6 +68,7 @@ class LightGCNPool(PJFPool):
         self.geek_ids, self.job_ids, self.labels = [], [], []
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in tqdm(file):
+                # pdb.set_trace()
                 geek_token, job_token, label = line.strip().split('\t')[:3]
                 geek_id = self.geek_token2id[geek_token]
                 self.geek_ids.append(geek_id)
@@ -129,7 +130,7 @@ class BGPJFPool(MultiGCNPool):
                 continue
             gid = self.geek_token2id[gid]
             jid = self.job_token2id[jid]
-            # pdb.set_trace()
+
             self.geek2jobs_neg[gid][self.geek2jobs_neg_num[gid]] = jid
             self.geek2jobs_neg_num[gid] += 1
             self.job2geeks_neg[jid][self.job2geeks_neg_num[gid]] = gid

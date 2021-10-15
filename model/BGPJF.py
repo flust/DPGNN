@@ -57,6 +57,9 @@ class BGPJF(PJFModel):
 
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
+        # self.loss_fct = nn.BCELoss()
+        self.loss_fct = BPRLoss()
+
         self.apply(self._init_weights)
 
     def get_edge(self, edges, u_p=True, j_p=True):
@@ -189,11 +192,68 @@ class BGPJF(PJFModel):
         scores = self.calculate_score(user, item)
         return self.sigmoid(scores)
 
+    def get_perm(self, x):
+        return list(torch.randperm(max(self.pool.sample_n, x))[:self.pool.sample_n])
+
     def mutual_loss(self, interaction):
-        pass
+        user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
+        pos_geek = interaction['geek_id']
+        pos_job = interaction['job_id']
+
+        user_self_score = torch.mul(user_e_p[pos_geek], user_e_c[pos_geek]).sum(dim=1)
+        user_self_score = (user_self_score.repeat(self.pool.sample_n, 1).T).reshape(-1)
+
+        item_self_score = torch.mul(item_e_p[pos_job], item_e_c[pos_job]).sum(dim=1)
+        item_self_score = (item_self_score.repeat(self.pool.sample_n, 1).T).reshape(-1)
+
+        # geek neg sample
+        g_n_idx = interaction['geek_neg_sample']
+        geek_neg_list = torch.gather(self.pool.geek2jobs_neg[pos_geek].to(self.config['device']), 1, g_n_idx)
+        u_pos = (pos_geek.repeat(self.pool.sample_n, 1).T).reshape(-1)
+        j_neg = geek_neg_list.view(-1).type(torch.long)
+        geek_neg_score = torch.mul(user_e_p[u_pos] + user_e_c[u_pos], item_e_p[j_neg] + item_e_c[j_neg]).sum(dim=1)
+
+        # job neg sample 
+        j_n_idx = interaction['job_neg_sample']
+        job_neg_list = torch.gather(self.pool.job2geeks_neg[pos_job].to(self.config['device']), 1, j_n_idx)
+        u_neg = job_neg_list.view(-1).type(torch.long)
+        j_pos = (pos_job.repeat(self.pool.sample_n, 1).T).reshape(-1)
+        geek_neg_score = torch.mul(user_e_p[u_neg] + user_e_c[u_neg], item_e_p[j_pos] + item_e_c[j_pos]).sum(dim=1)
+
+        loss = self.loss_fct(user_self_score, geek_neg_score) + self.loss_fct(item_self_score, geek_neg_score)
+        return loss
+
+        # pdb.set_trace()
+
+        # user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
+        # user_self_score = torch.mul(user_e_p, user_e_c).sum(dim=1)
+        # item_self_score = torch.mul(item_e_p, item_e_c).sum(dim=1)
+        
+        # user_list = list(torch.arange(self.n_users))
+        # item_list = list(torch.arange(self.n_items))
+
+        # user_neg_list = torch.Tensor(list(map(self.get_perm, user_list)))
+        # item_neg_list = torch.Tensor(list(map(self.get_perm, item_list)))
+        
+        # # geek neg score
+        # u_self = ((user_e_p + user_e_c).repeat(self.pool.sample_n, 1).T).reshape(-1)
+        # user_neg_list = user_neg_list.view(-1).type(torch.long)
+
+        # u_neight = u_self * (item_e_c[user_neg_list] + item_e_p[user_neg_list])
+        # # geek_neg_score = geek_neg_score.reshape(pos_geek.shape[0], -1).mean(dim = 1)
+        # loss = self.loss_fct(u_self, u_neight) + self.loss_fct(j_self, j_neight)
+
+        # u_n_s = max(self.sample_n, self.pool.job2geeks_neg_num[job_id]) # 
+        # self.job_neg_sample = torch.randperm(j_n_s)[:self.sample_n]
+
+        # j_n_s = max(self.sample_n, self.pool.job2geeks_neg_num[job_id]) # 
+        # self.job_neg_sample = torch.randperm(j_n_s)[:self.sample_n]
+
+        # neg_score = torch.mul((user_e_p + user_e_c) * (item_e_p + item_e_c)).sum(dim=1)
+
+        # return user_pos_score + item_pos_score
 
     def bilateral_loss(self, scores, interaction):
-        # pdb.set_trace()
         pos_idx = interaction['label'] == 1
         pos_geek = interaction['geek_id'][pos_idx] # torch.Size([674])
         pos_job = interaction['job_id'][pos_idx] # torch.Size([674])
@@ -208,20 +268,18 @@ class BGPJF(PJFModel):
         job_neg_list = torch.gather(self.pool.job2geeks_neg[pos_job].to(self.config['device']), 1, j_n_idx)
 
         # geek neg score
-        u_pos = (pos_geek.repeat(3,1).T).reshape(-1)
+        u_pos = (pos_geek.repeat(self.pool.sample_n, 1).T).reshape(-1)
         j_neg = geek_neg_list.view(-1).type(torch.long)
         geek_neg_score = self.calculate_score(u_pos, j_neg)
         geek_neg_score = geek_neg_score.reshape(pos_geek.shape[0], -1).mean(dim = 1)
 
         # job neg score
         u_neg = job_neg_list.view(-1).type(torch.long)
-        j_pos = (pos_job.repeat(3,1).T).reshape(-1)
+        j_pos = (pos_job.repeat(self.pool.sample_n, 1).T).reshape(-1)
         job_neg_score = self.calculate_score(u_neg, j_pos)
         job_neg_score = job_neg_score.reshape(pos_geek.shape[0], -1).mean(dim = 1)
 
-        neg_score = geek_neg_score + job_neg_score
-        self.BPRLoss = BPRLoss()
-        loss = self.BPRLoss(pos_score, neg_score)
+        loss = self.loss_fct(pos_score, geek_neg_score) + self.loss_fct(pos_score, geek_neg_score)
         return loss
 
     def calculate_loss(self, interaction):
@@ -235,16 +293,14 @@ class BGPJF(PJFModel):
         scores = self.sigmoid(scores)
 
         main_loss = self.loss(scores, label)
+        lambda_1 = self.config['lambda_1']
         bilateral_loss = self.bilateral_loss(scores, interaction)
+        lambda_2 = self.config['lambda_2']
         mutual_loss = self.mutual_loss(interaction)
 
         # scores = self.sigmoid(scores)
-        return main_loss + bilateral_loss
-
-        loss = self.loss(self.sigmoid(scores),label)\
-                + self.mutual_loss(interaction)\
-                + self.bilateral_loss(interaction)
-        return loss
+        # return main_loss + lambda_1 * bilateral_loss
+        return main_loss + lambda_1 * bilateral_loss + lambda_2 * mutual_loss
 
 
 

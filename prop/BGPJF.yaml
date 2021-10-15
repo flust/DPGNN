@@ -4,8 +4,10 @@ n_layers: 3
 # reg_weight: 1e-05
 # hidden_size: 8
 # dropout: 0.2
-sample_n: 3
+sample_n: 5
 
+lambda_1: 0
+lambda_2: 0
 
 # Training
 learning_rate: 0.0003

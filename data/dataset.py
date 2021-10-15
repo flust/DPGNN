@@ -115,18 +115,26 @@ class MultiGCNDataset(PJFDataset):
 class BGPJFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(BGPJFDataset, self).__init__(config, pool, phase)
-        self.pool = pool 
+        self.pool = pool
 
     def __getitem__(self, index):
-        self.sample_n = self.pool.sample_n
-        geek_id = self.geek_ids[index]
-        job_id = self.job_ids[index]
+        self.sample_n = self.pool.sample_n # 先固定 3
+        geek_id = int(self.geek_ids[index].item())
+        job_id = int(self.job_ids[index].item())
 
         # neg sample
-        g_n_s = max(self.sample_n, self.pool.geek2jobs_neg_num[geek_id]) # bug 未修复
-        self.geek_neg_sample = torch.randperm(g_n_s)[:self.sample_n] # 生成随机排列，然后采样前几个
+        # pool里面存的内容（以geek为例）：
+        #   1.geek2jobs_neg: 相当于负例邻接表，然后后面 padding 补 0
+        #   2.geek2jobs_neg_num: 记录每个 geek 的负例数
+        # 整体采样思路：
+        #   假设用户有十个负例要采三个，把索引 1-10 做一个randperm，然后取前3个
+        g_n_s = max(self.sample_n, self.pool.geek2jobs_neg_num[geek_id]) # 考虑到有用户实际负例数比采样数要少
 
-        j_n_s = max(self.sample_n, self.pool.job2geeks_neg_num[job_id]) #
+        # print(self.pool.geek2jobs_neg_num[geek_id])  # 用户geek的负例数量
+        # bug在于 g_n_s 固定是 3(sample_n) 个了
+        self.geek_neg_sample = torch.randperm(g_n_s)[:self.sample_n] # 相当于做一个 shuffle 然后取前 sample_n 个
+
+        j_n_s = max(self.sample_n, self.pool.job2geeks_neg_num[job_id]) # 
         self.job_neg_sample = torch.randperm(j_n_s)[:self.sample_n]
 
         return {
