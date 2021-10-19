@@ -258,36 +258,6 @@ class BGPJF(PJFModel):
         loss = self.loss_fct(user_self_score, geek_neg_score) + self.loss_fct(item_self_score, geek_neg_score)
         return loss
 
-        # pdb.set_trace()
-
-        # user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
-        # user_self_score = torch.mul(user_e_p, user_e_c).sum(dim=1)
-        # item_self_score = torch.mul(item_e_p, item_e_c).sum(dim=1)
-        
-        # user_list = list(torch.arange(self.n_users))
-        # item_list = list(torch.arange(self.n_items))
-
-        # user_neg_list = torch.Tensor(list(map(self.get_perm, user_list)))
-        # item_neg_list = torch.Tensor(list(map(self.get_perm, item_list)))
-        
-        # # geek neg score
-        # u_self = ((user_e_p + user_e_c).repeat(self.pool.sample_n, 1).T).reshape(-1)
-        # user_neg_list = user_neg_list.view(-1).type(torch.long)
-
-        # u_neight = u_self * (item_e_c[user_neg_list] + item_e_p[user_neg_list])
-        # # geek_neg_score = geek_neg_score.reshape(pos_geek.shape[0], -1).mean(dim = 1)
-        # loss = self.loss_fct(u_self, u_neight) + self.loss_fct(j_self, j_neight)
-
-        # u_n_s = max(self.sample_n, self.pool.job2geeks_neg_num[job_id]) # 
-        # self.job_neg_sample = torch.randperm(j_n_s)[:self.sample_n]
-
-        # j_n_s = max(self.sample_n, self.pool.job2geeks_neg_num[job_id]) # 
-        # self.job_neg_sample = torch.randperm(j_n_s)[:self.sample_n]
-
-        # neg_score = torch.mul((user_e_p + user_e_c) * (item_e_p + item_e_c)).sum(dim=1)
-
-        # return user_pos_score + item_pos_score
-
     def bilateral_loss(self, scores, interaction):
         pos_idx = interaction['label'] == 1
         pos_geek = interaction['geek_id'][pos_idx] # torch.Size([674])
@@ -328,14 +298,16 @@ class BGPJF(PJFModel):
         scores = self.sigmoid(scores)
 
         main_loss = self.loss(scores, label)
-        lambda_1 = self.config['lambda_1']
-        bilateral_loss = self.bilateral_loss(scores, interaction)
-        lambda_2 = self.config['lambda_2']
-        mutual_loss = self.mutual_loss(interaction)
 
-        # scores = self.sigmoid(scores)
-        # return main_loss + lambda_1 * bilateral_loss
-        return main_loss + lambda_1 * bilateral_loss + lambda_2 * mutual_loss
+        lambda_1 = self.config['lambda_1']
+        lambda_2 = self.config['lambda_2']
+
+        if(self.config['ADD_B_LOSS']):
+            main_loss += lambda_1 * self.bilateral_loss(scores, interaction)
+        if(self.config['ADD_M_LOSS']):
+            main_loss += lambda_2 * self.mutual_loss(interaction)
+
+        return main_loss
 
 
 
