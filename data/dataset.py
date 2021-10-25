@@ -21,10 +21,10 @@ def create_datasets(config, pool):
     else:
         # others: train model on full data
         # origin data
-        # data_list.extend(['train_all', 'valid_g', 'test_g'])
+        data_list.extend(['train_all', 'valid_g', 'valid_j'])
         
         # train data add: user_add / job_add  加入开聊数据做训练
-        data_list.extend(['train_all_add', 'valid_g', 'test_g'])
+        # data_list.extend(['train_all_add', 'valid_g', 'test_g'])
     
     # test set for geek & test set for job
     data_list.extend(['test_g', 'test_j'])

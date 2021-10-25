@@ -58,12 +58,10 @@ def main_process(model, config_dict=None, saved=True):
         logger.info(ds)
 
     # load dataset
-    train_data, valid_data, test_data, test_data_g, test_data_j = construct_dataloader(config, datasets)
+    train_data, valid_data_g, valid_data_j, test_data_g, test_data_j = construct_dataloader(config, datasets)
         
     # model loading and initialization
     model = dynamic_load(config, 'model')(config, pool).to(config['device'])
-    # print(os.environ["CUDA_VISIBLE_DEVICES"])
-
     logger.info(model)
     wandb.watch(model, model.loss, log="all", log_freq=100)
 
@@ -71,8 +69,9 @@ def main_process(model, config_dict=None, saved=True):
     trainer = Trainer(config, model)
     
     # model training
-    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved)
-    logger.info('best valid result: {}'.format(best_valid_result))
+    best_valid_score, best_valid_result_g, best_valid_result_j = trainer.fit(train_data, valid_data_g, valid_data_j, saved=saved)
+    logger.info('best valid result for geek: {}'.format(best_valid_result_g))
+    logger.info('best valid result for job: {}'.format(best_valid_result_j))
 
     # model evaluation for user
     test_result, test_result_str = trainer.evaluate(test_data_g, load_best_model=True)

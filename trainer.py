@@ -110,7 +110,7 @@ class Trainer(object):
             self.optimizer.step()
         return total_loss
 
-    def _valid_epoch(self, valid_data):
+    def _valid_epoch(self, valid_data, reverse=False):
         """Valid the model with valid data
 
         Args:
@@ -120,7 +120,7 @@ class Trainer(object):
             float: valid score
             dict: valid result
         """
-        valid_result, valid_result_str = self.evaluate(valid_data, load_best_model=False)
+        valid_result, valid_result_str = self.evaluate(valid_data, load_best_model=False, reverse=reverse)
         wandb.log(valid_result)
         valid_score = valid_result[self.valid_metric]
         return valid_score, valid_result, valid_result_str
@@ -179,12 +179,14 @@ class Trainer(object):
             train_loss_output += 'train loss:' + des % losses
         return train_loss_output + ']'
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+    def fit(self, train_data, valid_data_g=None, valid_data_j=None, verbose=True, saved=True):
         """Train the model based on the train data and the valid data.
 
         Args:
             train_data (DataLoader): the train data
-            valid_data (DataLoader, optional): the valid data, default: None.
+            valid_data_g (DataLoader, optional): the valid data of geek, default: None.
+                                               If it's None, the early_stopping is invalid.
+            valid_data_j (DataLoader, optional): the valid data of job, default: None.
                                                If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
@@ -207,7 +209,7 @@ class Trainer(object):
                 self.logger.info(train_loss_output)
 
             # eval
-            if self.eval_step <= 0 or not valid_data:
+            if self.eval_step <= 0 or not valid_data_g or not valid_data_j:
                 if saved:
                     self._save_checkpoint(epoch_idx)
                     update_output = 'Saving current: %s' % self.saved_model_file
@@ -217,23 +219,35 @@ class Trainer(object):
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
 
-                valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data)
+                
+                # valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data)
+                valid_score_g, valid_result_g, valid_result_str_g = self._valid_epoch(valid_data_g, reverse=False)
+                valid_score_j, valid_result_j, valid_result_str_j = self._valid_epoch(valid_data_j, reverse=True) # for evaluate in job direction
+                valid_score = (valid_score_g + valid_score_j) / 2
+                valid_result_str = valid_result_str_g + valid_result_str_j
+                # import pdb
+                # pdb.set_trace()
+
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = self._early_stopping(
                     valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result:' + valid_result_str
+                valid_result_g_output = 'valid result for geek:' + valid_result_str_g
+                valid_result_j_output = 'valid result for job:' + valid_result_str_j
+                
                 if verbose:
                     self.logger.info(valid_score_output)
-                    self.logger.info(valid_result_output)
+                    self.logger.info(valid_result_g_output)
+                    self.logger.info(valid_result_j_output)
                 if update_flag:
                     if saved:
                         self._save_checkpoint(epoch_idx)
                         update_output = 'Saving current best: %s' % self.saved_model_file
                         if verbose:
                             self.logger.info(update_output)
-                    self.best_valid_result = valid_result
+                    self.best_valid_result_g = valid_result_g
+                    self.best_valid_result_j = valid_result_j
 
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
@@ -241,7 +255,7 @@ class Trainer(object):
                     if verbose:
                         self.logger.info(stop_output)
                     break
-        return self.best_valid_score, self.best_valid_result
+        return self.best_valid_score, self.best_valid_result_g, self.best_valid_result_j
 
     def _early_stopping(self, value, best, cur_step, max_step):
         """validation-based early stopping
@@ -325,17 +339,6 @@ class Trainer(object):
         for batch_idx, batched_data in iter_data:
             interaction = batched_data
             scores = self.model.predict(dict2device(interaction, self.device))
-            # if save_score:
-            #     for gid, jid, label, score in zip(interaction['geek_id'], 
-            #                                     interaction['job_id'],
-            #                                     interaction['label'],
-            #                                     scores):
-            #         line = '\t'.join([str(gid.item()), 
-            #                             str(jid.item()), 
-            #                             str(label.item()), 
-            #                             str(score.item())]) + '\n'
-            #         score_file.write(line)
-
             batch_matrix = self.evaluator.collect(interaction, scores, reverse)
             batch_matrix_list.append(batch_matrix)
         result, result_str = self.evaluator.evaluate(batch_matrix_list, group)

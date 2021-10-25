@@ -47,43 +47,6 @@ class PopPool(PJFPool):
     def __init__(self, config):
         super(PopPool, self).__init__(config)
 
-
-class MFPool(PJFPool):
-    def __init__(self, config):
-        super(MFPool, self).__init__(config)
-
-class NCFPool(PJFPool):
-    def __init__(self, config):
-        super(NCFPool, self).__init__(config)
-
-class LightGCNPool(PJFPool):
-    def __init__(self, config):
-        super(LightGCNPool, self).__init__(config)
-        self._load_edge()
-    
-    def _load_edge(self):
-        filepath = os.path.join(self.config['dataset_path'], f'data.train_all')
-        self.logger.info(f'Loading from {filepath}')
-
-        self.geek_ids, self.job_ids, self.labels = [], [], []
-        with open(filepath, 'r', encoding='utf-8') as file:
-            for line in tqdm(file):
-                # pdb.set_trace()
-                geek_token, job_token, label = line.strip().split('\t')[:3]
-                geek_id = self.geek_token2id[geek_token]
-                self.geek_ids.append(geek_id)
-                job_id = self.job_token2id[job_token]
-                self.job_ids.append(job_id)
-                self.labels.append(int(label))
-        self.geek_ids = torch.LongTensor(self.geek_ids)
-        self.job_ids = torch.LongTensor(self.job_ids)
-        self.labels = torch.FloatTensor(self.labels)
-
-        src = self.geek_ids[self.labels == 1]
-        tgt = self.job_ids[self.labels == 1]
-        data = self.labels[self.labels == 1]
-        self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
-
 class MultiGCNPool(PJFPool):
     def __init__(self, config):
         super(MultiGCNPool, self).__init__(config)
@@ -110,13 +73,13 @@ class MultiGCNPool(PJFPool):
 
         return [self.geek_ids, self.job_ids]
 
-
 class BGPJFPool(MultiGCNPool):
     def __init__(self, config):
         super(BGPJFPool, self).__init__(config)
         self.sample_n = config['sample_n']
         self._load_neg()
-        self._load_bert()
+        if(config['ADD_BERT']):
+            self._load_bert()
 
     def _load_neg(self):
         self.geek2jobs_neg = torch.zeros(self.geek_num, 1000)
@@ -162,6 +125,44 @@ class BGPJFPool(MultiGCNPool):
         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
+
+class MFPool(BGPJFPool):
+    def __init__(self, config):
+        super(MFPool, self).__init__(config)
+
+
+class NCFPool(BGPJFPool):
+    def __init__(self, config):
+        super(NCFPool, self).__init__(config)
+
+
+class LightGCNPool(BGPJFPool):
+    def __init__(self, config):
+        super(LightGCNPool, self).__init__(config)
+        self._load_edge()
+    
+    def _load_edge(self):
+        filepath = os.path.join(self.config['dataset_path'], f'data.train_all_add')
+        self.logger.info(f'Loading from {filepath}')
+
+        self.geek_ids, self.job_ids, self.labels = [], [], []
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in tqdm(file):
+                # pdb.set_trace()
+                geek_token, job_token, label = line.strip().split('\t')[:3]
+                geek_id = self.geek_token2id[geek_token]
+                self.geek_ids.append(geek_id)
+                job_id = self.job_token2id[job_token]
+                self.job_ids.append(job_id)
+                self.labels.append(int(label))
+        self.geek_ids = torch.LongTensor(self.geek_ids)
+        self.job_ids = torch.LongTensor(self.job_ids)
+        self.labels = torch.FloatTensor(self.labels)
+
+        src = self.geek_ids[self.labels == 1]
+        tgt = self.job_ids[self.labels == 1]
+        data = self.labels[self.labels == 1]
+        self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):

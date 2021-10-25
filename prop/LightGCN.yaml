@@ -2,6 +2,9 @@
 embedding_size: 256
 n_layers: 2
 # dropout: 0.2
+ADD_BERT: True
+BERT_embedding_size: 768
+BERT_output_size: 32
 
 # Training
 learning_rate: 0.0001

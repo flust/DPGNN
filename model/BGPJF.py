@@ -5,6 +5,7 @@ from torch.nn.init import xavier_normal_
 from torch.nn.init import normal_
 from model.abstract import PJFModel
 from model.layer import GCNConv, GATConv
+# from torch_geometric.nn import GATConv
 import pdb
 
 class BPRLoss(nn.Module):
@@ -60,7 +61,7 @@ class BGPJF(PJFModel):
         gcn_modules = []
         for i in range(self.n_layers):
             # gcn_modules.append(GCNConv(self.embedding_size, self.embedding_size))
-            gcn_modules.append(GATConv(self.embedding_size + self.BERT_e_size, self.embedding_size + self.BERT_e_size))
+            gcn_modules.append(GCNConv(self.embedding_size + self.BERT_e_size, self.embedding_size + self.BERT_e_size))
         self.gcn_layers = nn.Sequential(*gcn_modules)
 
         self.sigmoid = nn.Sigmoid()
@@ -138,17 +139,16 @@ class BGPJF(PJFModel):
         job_addfriend_edge = self.get_edge(self.job_add_edge, u_p=False, j_p=True)
                                
         # geek_p <-> geek_c  &&  job_p <-> job_c
-        # self_edge = self.get_self_edge()
+        self_edge = self.get_self_edge()
 
         # combine all edges
-        # edges = torch.cat((user_success_edge, 
-        #                     job_success_edge, 
-        #                     user_addfriend_edge,
-        #                     job_addfriend_edge,
-        #                     self_edge), 1)
-        edges = torch.cat((success_edge,
+        edges = torch.cat((success_edge, 
                             user_addfriend_edge,
-                            job_addfriend_edge), 1)
+                            job_addfriend_edge,
+                            self_edge), 1)
+        # edges = torch.cat((success_edge,
+        #                     user_addfriend_edge,
+        #                     job_addfriend_edge), 1)
         # make edges bidirected
         # edges = torch.cat((edges, edges[[1,0]]), 1)
         return edges
@@ -295,7 +295,7 @@ class BGPJF(PJFModel):
 
         label = interaction['label']  # 4096
 
-        scores = self.sigmoid(scores)
+        # scores = self.sigmoid(scores)
 
         main_loss = self.loss(scores, label)
 

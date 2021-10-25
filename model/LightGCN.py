@@ -19,6 +19,8 @@ class LightGCN(PJFModel):
         self.interaction_matrix = pool.interaction_matrix.astype(np.float32)
         self.n_users = pool.geek_num
         self.n_items = pool.job_num
+        self.config = config 
+        self.pool = pool
         self.USER_ID = 'geek_id'
         self.ITEM_ID = 'job_id'
         self.LABEL_ID = 'label'
@@ -47,6 +49,15 @@ class LightGCN(PJFModel):
 
         # generate intermediate data
         self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
+
+        # bert part
+        self.ADD_BERT = config['ADD_BERT']
+        self.BERT_e_size = 0
+        if self.ADD_BERT:
+            self.BERT_e_size = config['BERT_output_size']
+            self.bert_lr = nn.Linear(config['BERT_embedding_size'],
+                        self.BERT_e_size).to(self.config['device'])
+            self._load_bert()
 
         # parameters initialization
         # self.apply(xavier_normal_)
@@ -104,7 +115,16 @@ class LightGCN(PJFModel):
         user_embeddings = self.user_embedding.weight
         item_embeddings = self.item_embedding.weight
         ego_embeddings = torch.cat([user_embeddings, item_embeddings], dim=0)
-        return ego_embeddings
+
+        if not self.ADD_BERT:
+            return ego_embeddings
+        else:
+            self.bert_u = self.bert_lr(self.bert_user)
+            self.bert_j = self.bert_lr(self.bert_job)
+
+            bert_e = torch.cat([self.bert_u,
+                                self.bert_j], dim = 0)
+            return torch.cat([ego_embeddings, bert_e], dim=1)
 
     def forward(self):
         all_embeddings = self.get_ego_embeddings()
@@ -165,3 +185,18 @@ class LightGCN(PJFModel):
         scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)
+
+    def _load_bert(self):
+        self.bert_user = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.pool.geek_num):
+            geek_token = self.pool.geek_id2token[i]
+            bert_id =  self.pool.geek_token2bertid[geek_token]
+            bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
+            self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
+
+        self.bert_job = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.pool.job_num):
+            job_token = self.pool.job_id2token[i]
+            bert_id =  self.pool.job_token2bertid[job_token]
+            bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
+            self.bert_job = torch.cat([self.bert_job, bert_j_vec], dim=0)

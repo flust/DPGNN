@@ -9,7 +9,8 @@ class MF(PJFModel):
     def __init__(self, config, pool):
 
         super(MF, self).__init__(config, pool)
-
+        self.config = config
+        self.pool = pool
         self.embedding_size = config['embedding_size']
 
         # define layers and loss
@@ -42,14 +43,14 @@ class MF(PJFModel):
         geek_id = interaction['geek_id']
         job_id = interaction['job_id']
 
+        geek_vec = self.geek_emb(geek_id)
+        job_vec = self.job_emb(job_id)
         if self.ADD_BERT:
             self.bert_u = self.bert_lr(self.bert_user)
             self.bert_j = self.bert_lr(self.bert_job)
-            geek_vec = torch.cat([self.geek_emb(geek_id), self.bert_u], dim=1)
-            job_vec = torch.cat([self.job_emb(job_id), self.bert_j], dim=1)
-        else:
-            geek_vec = self.geek_emb(geek_id)
-            job_vec = self.job_emb(job_id)
+            geek_vec = torch.cat([self.geek_emb(geek_id), self.bert_u[geek_id]], dim=1)
+            job_vec = torch.cat([self.job_emb(job_id), self.bert_j[job_id]], dim=1)
+            
         score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) \
             + self.geek_b(geek_id).squeeze() \
             + self.job_b(job_id).squeeze() \
@@ -68,14 +69,14 @@ class MF(PJFModel):
 
     def _load_bert(self):
         self.bert_user = torch.FloatTensor([]).to(self.config['device'])
-        for i in range(self.n_users):
+        for i in range(self.geek_num):
             geek_token = self.pool.geek_id2token[i]
             bert_id =  self.pool.geek_token2bertid[geek_token]
             bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
             self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
 
         self.bert_job = torch.FloatTensor([]).to(self.config['device'])
-        for i in range(self.n_items):
+        for i in range(self.job_num):
             job_token = self.pool.job_id2token[i]
             bert_id =  self.pool.job_token2bertid[job_token]
             bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
