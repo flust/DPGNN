@@ -73,6 +73,8 @@ def main_process(model, config_dict=None, saved=True):
     logger.info('best valid result for geek: {}'.format(best_valid_result_g))
     logger.info('best valid result for job: {}'.format(best_valid_result_j))
 
+    import pdb
+    pdb.set_trace()
     # model evaluation for user
     test_result, test_result_str = trainer.evaluate(test_data_g, load_best_model=True)
     wandb.log(test_result)
@@ -87,7 +89,8 @@ def main_process(model, config_dict=None, saved=True):
 
     return {
         'best_valid_score': best_valid_score,
-        'best_valid_result': best_valid_result,
+        'best_valid_result_g': best_valid_result_g,
+        'best_valid_result_j':best_valid_result_j,
         'test_result': test_result
     }
 

@@ -17,6 +17,8 @@ class LightGCN(PJFModel):
 
         # load dataset info
         self.interaction_matrix = pool.interaction_matrix.astype(np.float32)
+        # import pdb
+        # pdb.set_trace()
         self.n_users = pool.geek_num
         self.n_items = pool.job_num
         self.config = config 
@@ -40,6 +42,7 @@ class LightGCN(PJFModel):
 
         # self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
+        # self.loss = nn.BCELoss()
 
         # self.reg_loss = EmbLoss()
 
@@ -152,10 +155,10 @@ class LightGCN(PJFModel):
         i_embeddings = item_all_embeddings[item]
 
         # calculate BPR Loss
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) \
-            + self.geek_b(user).squeeze() \
-            + self.job_b(item).squeeze() \
-            + self.miu
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) + self.miu \
+            # + self.geek_b(user).squeeze() \
+            # + self.job_b(item).squeeze() \
+            
         return self.loss(scores, label)
 
     def predict(self, interaction):
@@ -166,12 +169,13 @@ class LightGCN(PJFModel):
 
         u_embeddings = user_all_embeddings[user]
         i_embeddings = item_all_embeddings[item]
+
         # import pdb
         # pdb.set_trace()
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)\
-            + self.geek_b(user).squeeze() \
-            + self.job_b(item).squeeze() \
-            + self.miu
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) + self.miu\
+            # + self.geek_b(user).squeeze() \
+            # + self.job_b(item).squeeze() \
+            
         return scores
 
     def full_sort_predict(self, interaction):

@@ -296,7 +296,6 @@ class BGPJF(PJFModel):
         label = interaction['label']  # 4096
 
         # scores = self.sigmoid(scores)
-
         main_loss = self.loss(scores, label)
 
         lambda_1 = self.config['lambda_1']

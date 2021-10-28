@@ -45,16 +45,17 @@ class MF(PJFModel):
 
         geek_vec = self.geek_emb(geek_id)
         job_vec = self.job_emb(job_id)
+
         if self.ADD_BERT:
             self.bert_u = self.bert_lr(self.bert_user)
             self.bert_j = self.bert_lr(self.bert_job)
             geek_vec = torch.cat([self.geek_emb(geek_id), self.bert_u[geek_id]], dim=1)
             job_vec = torch.cat([self.job_emb(job_id), self.bert_j[job_id]], dim=1)
             
-        score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) \
+        score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) + self.miu \
             + self.geek_b(geek_id).squeeze() \
             + self.job_b(job_id).squeeze() \
-            + self.miu
+            
         return score
 
     def calculate_loss(self, interaction):
@@ -63,8 +64,6 @@ class MF(PJFModel):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        # import pdb
-        # pdb.set_trace()
         return self.sigmoid(self.forward(interaction))
 
     def _load_bert(self):

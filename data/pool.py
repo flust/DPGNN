@@ -82,6 +82,7 @@ class BGPJFPool(MultiGCNPool):
             self._load_bert()
 
     def _load_neg(self):
+        # save neg sample
         self.geek2jobs_neg = torch.zeros(self.geek_num, 1000)
         self.geek2jobs_neg_num = DefaultDict(int)
         self.job2geeks_neg = torch.zeros(self.job_num, 1000)
@@ -139,10 +140,15 @@ class NCFPool(BGPJFPool):
 class LightGCNPool(BGPJFPool):
     def __init__(self, config):
         super(LightGCNPool, self).__init__(config)
+        self.addfriend_in_graph = self.config['addfriend_in_graph']
         self._load_edge()
     
     def _load_edge(self):
-        filepath = os.path.join(self.config['dataset_path'], f'data.train_all_add')
+        if(self.addfriend_in_graph):
+            filepath = os.path.join(self.config['dataset_path'], f'data.train_all_add')
+        else:
+            filepath = os.path.join(self.config['dataset_path'], f'data.train_all')
+
         self.logger.info(f'Loading from {filepath}')
 
         self.geek_ids, self.job_ids, self.labels = [], [], []
@@ -158,10 +164,11 @@ class LightGCNPool(BGPJFPool):
         self.geek_ids = torch.LongTensor(self.geek_ids)
         self.job_ids = torch.LongTensor(self.job_ids)
         self.labels = torch.FloatTensor(self.labels)
-
         src = self.geek_ids[self.labels == 1]
         tgt = self.job_ids[self.labels == 1]
         data = self.labels[self.labels == 1]
+        # import pdb
+        # pdb.set_trace()
         self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
 
 class SingleBERTPool(PJFPool):
@@ -384,7 +391,7 @@ class PJFNNPool(PJFPool):
                     sent_num[idx] += 1    # sent_num[idx] 第idx个用户的句子个数
                     sent_num_sum += 1
 
-            pdb.set_trace()
+            # pdb.set_trace()
             avg_sent_num = sent_num_sum / user_num_count   # 2.606
             avg_sent_len = sent_len_sum / sent_num_sum   # 13.939
             
