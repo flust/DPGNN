@@ -11,6 +11,7 @@ from utils import init_seed, init_logger, dynamic_load
 import itertools
 import wandb
 
+MODEL = 'MF'
 metrics = ['gauc', 'p@5', 'r@5', 'mrr']
 all_params = {
     'embedding_size': [8, 16],
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     run_id = 0
 
     # get config
-    params = hyper_opt_preparation(model='MF')
+    params = hyper_opt_preparation(model=MODEL)
     logger = getLogger()
     ori_config = params['config']
 
