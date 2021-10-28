@@ -224,7 +224,7 @@ class Trainer(object):
                 valid_score_g, valid_result_g, valid_result_str_g = self._valid_epoch(valid_data_g, reverse=False)
                 valid_score_j, valid_result_j, valid_result_str_j = self._valid_epoch(valid_data_j, reverse=True) # for evaluate in job direction
                 valid_score = (valid_score_g + valid_score_j) / 2
-                valid_result_str = valid_result_str_g + valid_result_str_j
+                # valid_result_str = valid_result_str_g + valid_result_str_j
                 # import pdb
                 # pdb.set_trace()
 

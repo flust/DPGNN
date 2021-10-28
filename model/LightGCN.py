@@ -40,7 +40,7 @@ class LightGCN(PJFModel):
         self.job_b = nn.Embedding(self.job_num, 1)
         self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
 
-        # self.sigmoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
         # self.loss = nn.BCELoss()
 
@@ -136,8 +136,10 @@ class LightGCN(PJFModel):
         for layer_idx in range(self.n_layers):
             all_embeddings = torch.sparse.mm(self.norm_adj_matrix, all_embeddings)
             embeddings_list.append(all_embeddings)
+
         lightgcn_all_embeddings = torch.stack(embeddings_list, dim=1)
         lightgcn_all_embeddings = torch.mean(lightgcn_all_embeddings, dim=1)
+
         user_all_embeddings, item_all_embeddings = torch.split(lightgcn_all_embeddings, [self.n_users, self.n_items])
         return user_all_embeddings, item_all_embeddings
 
@@ -176,7 +178,7 @@ class LightGCN(PJFModel):
             # + self.geek_b(user).squeeze() \
             # + self.job_b(item).squeeze() \
             
-        return scores
+        return self.sigmoid(scores)
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
