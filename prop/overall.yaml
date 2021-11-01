@@ -10,6 +10,7 @@ stopping_step: 5
 clip_grad_norm: ~
 # pos_weight: 8.633  # 
 pos_weight: 5.246  # 
+# pos_weight: 1
 # pos_weight: 0.6267 # 开聊数据作为正例加入训练
 
 # Evaluation

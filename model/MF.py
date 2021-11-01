@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
 from model.abstract import PJFModel
-
+from model.layer import BPRLoss
 
 class MF(PJFModel):
     def __init__(self, config, pool):
@@ -31,6 +31,7 @@ class MF(PJFModel):
 
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
+        self.bpr_loss = BPRLoss().to(config['device'])
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -52,16 +53,32 @@ class MF(PJFModel):
             geek_vec = torch.cat([self.geek_emb(geek_id), self.bert_u[geek_id]], dim=1)
             job_vec = torch.cat([self.job_emb(job_id), self.bert_j[job_id]], dim=1)
             
-        score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) + self.miu \
-            + self.geek_b(geek_id).squeeze() \
-            + self.job_b(job_id).squeeze() \
+        score = torch.sum(torch.mul(geek_vec, job_vec), dim=1) \
+            # + self.miu \
+            # + self.geek_b(geek_id).squeeze() \
+            # + self.job_b(job_id).squeeze() \
             
         return score
 
     def calculate_loss(self, interaction):
         label = interaction['label']
-        output = self.forward(interaction)
-        return self.loss(output, label)
+        geek_id = interaction['geek_id']
+        job_id = interaction['job_id']
+        neg_id = interaction['neg_job']
+
+        # print(neg_id)
+        # print(max(neg_id))
+        # print(min(neg_id))
+        geek_vec = self.geek_emb(geek_id)
+        job_vec = self.job_emb(job_id)
+        neg_vec = self.job_emb(neg_id)
+
+        pos_scores = torch.mul(geek_vec, job_vec).sum(dim=1)
+        # return self.loss(pos_scores, label)
+        neg_scores = torch.mul(geek_vec, neg_vec).sum(dim=1)
+
+        # print(neg_scores)
+        return self.bpr_loss(pos_scores, neg_scores)
 
     def predict(self, interaction):
         return self.sigmoid(self.forward(interaction))

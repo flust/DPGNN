@@ -127,17 +127,31 @@ class BGPJFPool(MultiGCNPool):
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
 
-class MFPool(BGPJFPool):
+class MFPool(PJFPool):
     def __init__(self, config):
         super(MFPool, self).__init__(config)
+        self._load_inter()
 
+    def _load_inter(self):
+        self.geek2jobs = DefaultDict(list)
+        self.job2geeks = DefaultDict(list)
 
-class NCFPool(BGPJFPool):
+        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all_add'))
+        for l in tqdm(data_all):
+            gid, jid, _ = l.split('\t')
+            gid = self.geek_token2id[gid]
+            jid = self.job_token2id[jid]
+
+            self.geek2jobs[gid].append(jid)
+            self.job2geeks[jid].append(gid)
+            
+
+class NCFPool(PJFPool):
     def __init__(self, config):
         super(NCFPool, self).__init__(config)
 
 
-class LightGCNPool(BGPJFPool):
+class LightGCNPool(PJFPool):
     def __init__(self, config):
         super(LightGCNPool, self).__init__(config)
         self.addfriend_in_graph = self.config['addfriend_in_graph']

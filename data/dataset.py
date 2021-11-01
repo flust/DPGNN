@@ -96,6 +96,26 @@ class PopDataset(PJFDataset):
 class MFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(MFDataset, self).__init__(config, pool, phase)
+        self.pool = pool
+    
+    def __getitem__(self, index):
+        geek_id = self.geek_ids[index]
+        job_id = self.job_ids[index]
+        neg_geek = random.randint(1, self.geek_num - 1)
+        neg_job = random.randint(1, self.job_num - 1)
+
+        while neg_job in self.pool.geek2jobs[geek_id]:
+            neg_job = random.randint(1, self.job_num - 1)
+        while neg_geek in self.pool.job2geeks[job_id]:
+            neg_geek = random.randint(1, self.geek_num - 1)
+        
+        return {
+            'geek_id': self.geek_ids[index],
+            'job_id': self.job_ids[index],
+            'neg_geek': neg_geek,
+            'neg_job': neg_job,
+            'label': self.labels[index]
+        }
 
 class NCFDataset(PJFDataset):
     def __init__(self, config, pool, phase):

@@ -157,7 +157,8 @@ class LightGCN(PJFModel):
         i_embeddings = item_all_embeddings[item]
 
         # calculate BPR Loss
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) + self.miu \
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) \
+            # + self.miu \
             # + self.geek_b(user).squeeze() \
             # + self.job_b(item).squeeze() \
             
@@ -174,7 +175,8 @@ class LightGCN(PJFModel):
 
         # import pdb
         # pdb.set_trace()
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) + self.miu\
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) \
+            # + self.miu\
             # + self.geek_b(user).squeeze() \
             # + self.job_b(item).squeeze() \
             
