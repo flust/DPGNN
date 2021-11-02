@@ -42,7 +42,7 @@ class LightGCN(PJFModel):
 
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
-        # self.loss = nn.BCELoss()
+        self.bpr_loss = BPRLoss().to(config['device'])
 
         # self.reg_loss = EmbLoss()
 
@@ -144,25 +144,20 @@ class LightGCN(PJFModel):
         return user_all_embeddings, item_all_embeddings
 
     def calculate_loss(self, interaction):
-        # clear the storage variable when training
-        if self.restore_user_e is not None or self.restore_item_e is not None:
-            self.restore_user_e, self.restore_item_e = None, None
-
-        user = interaction[self.USER_ID]
-        item = interaction[self.ITEM_ID]
-        label = interaction[self.LABEL_ID]
+        label = interaction['label']
+        geek_id = interaction['geek_id']
+        job_id = interaction['job_id']
+        neg_id = interaction['neg_job']
 
         user_all_embeddings, item_all_embeddings = self.forward()
-        u_embeddings = user_all_embeddings[user]
-        i_embeddings = item_all_embeddings[item]
+        geek_vec = user_all_embeddings[geek_id]
+        job_vec = item_all_embeddings[job_id]
+        neg_vec = item_all_embeddings[neg_id]
 
-        # calculate BPR Loss
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) \
-            # + self.miu \
-            # + self.geek_b(user).squeeze() \
-            # + self.job_b(item).squeeze() \
-            
-        return self.loss(scores, label)
+        pos_scores = torch.mul(geek_vec, job_vec).sum(dim=1)
+        neg_scores = torch.mul(geek_vec, neg_vec).sum(dim=1)
+
+        return self.bpr_loss(pos_scores, neg_scores)
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
@@ -173,26 +168,8 @@ class LightGCN(PJFModel):
         u_embeddings = user_all_embeddings[user]
         i_embeddings = item_all_embeddings[item]
 
-        # import pdb
-        # pdb.set_trace()
-        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1) \
-            # + self.miu\
-            # + self.geek_b(user).squeeze() \
-            # + self.job_b(item).squeeze() \
-            
-        return self.sigmoid(scores)
-
-    def full_sort_predict(self, interaction):
-        user = interaction[self.USER_ID]
-        if self.restore_user_e is None or self.restore_item_e is None:
-            self.restore_user_e, self.restore_item_e = self.forward()
-        # get user embedding from storage variable
-        u_embeddings = self.restore_user_e[user]
-
-        # dot with all item embedding to accelerate
-        scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
-
-        return scores.view(-1)
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
+        return scores
 
     def _load_bert(self):
         self.bert_user = torch.FloatTensor([]).to(self.config['device'])
