@@ -136,7 +136,7 @@ class MFPool(PJFPool):
         self.geek2jobs = DefaultDict(list)
         self.job2geeks = DefaultDict(list)
 
-        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all_add'))
+        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
         for l in tqdm(data_all):
             gid, jid, _ = l.split('\t')
             gid = self.geek_token2id[gid]
