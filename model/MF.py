@@ -66,6 +66,8 @@ class MF(PJFModel):
         job_id = interaction['job_id']
         neg_id = interaction['neg_job']
 
+        # import pdb
+        # pdb.set_trace()
         # print(neg_id)
         # print(max(neg_id))
         # print(min(neg_id))
@@ -81,7 +83,7 @@ class MF(PJFModel):
         return self.bpr_loss(pos_scores, neg_scores)
 
     def predict(self, interaction):
-        return self.sigmoid(self.forward(interaction))
+        return self.forward(interaction)
 
     def _load_bert(self):
         self.bert_user = torch.FloatTensor([]).to(self.config['device'])

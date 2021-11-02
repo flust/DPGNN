@@ -146,12 +146,12 @@ class MFPool(PJFPool):
             self.job2geeks[jid].append(gid)
             
 
-class NCFPool(PJFPool):
+class NCFPool(MFPool):
     def __init__(self, config):
         super(NCFPool, self).__init__(config)
 
 
-class LightGCNPool(PJFPool):
+class LightGCNPool(MFPool):
     def __init__(self, config):
         super(LightGCNPool, self).__init__(config)
         self.addfriend_in_graph = self.config['addfriend_in_graph']

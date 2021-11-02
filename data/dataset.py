@@ -12,22 +12,29 @@ import random
 
 def create_datasets(config, pool):
     data_list = []
+    train_or_evaluate = []
     if config['direction'] == 'geek':
         # train model on user data 
         data_list.extend(['train_g', 'valid_g', 'test_g'])
+        # train_or_evaluate.extend(['train', 'evaluate', 'evaluate'])
+        
     elif config['direction'] == 'job':
         # job: train model on job data 
         data_list.extend(['train_j', 'valid_j', 'test_j'])
+        # train_or_evaluate.extend(['train', 'evaluate', 'evaluate'])
+
     else:
         # others: train model on full data
         # origin data
         data_list.extend(['train_all', 'valid_g', 'valid_j'])
+        # train_or_evaluate.extend(['train', 'evaluate', 'evaluate'])
         
         # train data add: user_add / job_add  加入开聊数据做训练
         # data_list.extend(['train_all_add', 'valid_g', 'test_g'])
     
     # test set for geek & test set for job
     data_list.extend(['test_g', 'test_j'])
+    # train_or_evaluate.extend(['evaluate', 'evaluate'])
 
     return [
         dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, phase)
@@ -98,6 +105,27 @@ class MFDataset(PJFDataset):
         super(MFDataset, self).__init__(config, pool, phase)
         self.pool = pool
     
+    def _load_inters(self):
+        filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}')
+        self.logger.info(f'Loading from {filepath}')
+
+        self.geek_ids, self.job_ids, self.labels = [], [], []
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in tqdm(file):
+                geek_token, job_token, label = line.strip().split('\t')[:3]
+                if self.phase[0:5] == 'train' and label[0] == '0':
+                    continue
+                geek_id = self.geek_token2id[geek_token]
+                self.geek_ids.append(geek_id)
+                job_id = self.job_token2id[job_token]
+                self.job_ids.append(job_id)
+                self.labels.append(int(label))
+        self.geek_ids = torch.LongTensor(self.geek_ids)
+        self.job_ids = torch.LongTensor(self.job_ids)
+        self.labels = torch.FloatTensor(self.labels)
+        # import pdb
+        # pdb.set_trace()
+
     def __getitem__(self, index):
         geek_id = self.geek_ids[index]
         job_id = self.job_ids[index]
@@ -117,12 +145,12 @@ class MFDataset(PJFDataset):
             'label': self.labels[index]
         }
 
-class NCFDataset(PJFDataset):
+class NCFDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(NCFDataset, self).__init__(config, pool, phase)
 
 
-class LightGCNDataset(PJFDataset):
+class LightGCNDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(LightGCNDataset, self).__init__(config, pool, phase)
 
