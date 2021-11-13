@@ -1,17 +1,17 @@
 # Device
 use_gpu: True
-gpu_id: 1
+gpu_id: 0
 
 # Training
 learner: Adam
 epochs: 3000 # 300
 eval_step: 1
-stopping_step: 5
+stopping_step: 10
 clip_grad_norm: ~
 # pos_weight: 8.633  # 
-pos_weight: 5.246  # 
-# pos_weight: 1
+# pos_weight: 5.246  # 
 # pos_weight: 0.6267 # 开聊数据作为正例加入训练
+pos_weight: 1
 
 # Evaluation
 topk: [5]
@@ -25,7 +25,8 @@ pin_memory: True
 checkpoint_dir: ./saved/
 # dataset_path: /home/yangchen/dataset/job/cikm/order_analysis
 # dataset_path: /home/yangchen/dataset/job/cikm/ml-1m
-dataset_path: /home/yangchen/dataset/job/cikm/final_dir
+dataset_path: /home/yangchen/dataset/job/four_month_5_core/final_dir
+
 loss_decimal_place: 4
 metric_decimal_place: 4
 

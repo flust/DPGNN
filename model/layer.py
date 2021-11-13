@@ -138,9 +138,7 @@ class FusionLayer(nn.Module):
         b = self._single_layer(b, a)
         return torch.cat([a, b], dim=-1)
 
-        import pdb
 
-import pdb
 class GCNConv(MessagePassing):
     # This part follows the official website of geometric
     def __init__(self, in_channels, out_channels):
@@ -153,9 +151,6 @@ class GCNConv(MessagePassing):
         deg = degree(col, x.size(0), dtype=x.dtype)
         deg_inv_sqrt = deg.pow(-0.5)
         norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-        # edge: torch.Size([2, 2882146])
-        # x: torch.Size([194422, 32])
-        # norm: torch.Size([2882146])
         return self.propagate(edge_index, x=x, norm=norm)
 
     def message(self, x_j, norm):
@@ -172,6 +167,20 @@ class BPRLoss(nn.Module):
         return loss
 
 
+class EmbLoss(nn.Module):
+    """ EmbLoss, regularization on embeddings
+    """
+
+    def __init__(self, norm=2):
+        super(EmbLoss, self).__init__()
+        self.norm = norm
+
+    def forward(self, *embeddings):
+        emb_loss = torch.zeros(1).to(embeddings[-1].device)
+        for embedding in embeddings:
+            emb_loss += torch.norm(embedding, p=self.norm)
+        emb_loss /= embeddings[-1].shape[0]
+        return emb_loss
 
 
 from typing import Union, Tuple, Optional

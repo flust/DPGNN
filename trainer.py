@@ -219,14 +219,10 @@ class Trainer(object):
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
 
-                
-                # valid_score, valid_result, valid_result_str = self._valid_epoch(valid_data)
                 valid_score_g, valid_result_g, valid_result_str_g = self._valid_epoch(valid_data_g, reverse=False)
                 valid_score_j, valid_result_j, valid_result_str_j = self._valid_epoch(valid_data_j, reverse=True) # for evaluate in job direction
+
                 valid_score = (valid_score_g + valid_score_j) / 2
-                # valid_result_str = valid_result_str_g + valid_result_str_j
-                # import pdb
-                # pdb.set_trace()
 
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = self._early_stopping(
                     valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step)

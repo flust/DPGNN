@@ -10,8 +10,6 @@ from model.layer import BPRLoss
 
 
 class LightGCN(PJFModel):
-    # input_type = InputType.PAIRWISE
-
     def __init__(self, config, pool):
         super(LightGCN, self).__init__(config, pool)
 
@@ -41,14 +39,10 @@ class LightGCN(PJFModel):
         self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
-        self.bpr_loss = BPRLoss().to(config['device'])
+        # self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
+        self.loss = BPRLoss().to(config['device'])
 
         # self.reg_loss = EmbLoss()
-
-        # storage variables for full sort evaluation acceleration
-        self.restore_user_e = None
-        self.restore_item_e = None
 
         # generate intermediate data
         self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
@@ -144,6 +138,17 @@ class LightGCN(PJFModel):
         return user_all_embeddings, item_all_embeddings
 
     def calculate_loss(self, interaction):
+        # label = interaction['label']
+        # geek_id = interaction['geek_id']
+        # job_id = interaction['job_id']
+
+        # user_all_embeddings, item_all_embeddings = self.forward()
+
+        # geek_vec = user_all_embeddings[geek_id]
+        # job_vec = item_all_embeddings[job_id]
+        # scores = torch.mul(geek_vec, job_vec).sum(dim=1)
+        # return self.loss(scores, label)
+
         label = interaction['label']
         geek_id = interaction['geek_id']
         job_id = interaction['job_id']
@@ -157,7 +162,7 @@ class LightGCN(PJFModel):
         pos_scores = torch.mul(geek_vec, job_vec).sum(dim=1)
         neg_scores = torch.mul(geek_vec, neg_vec).sum(dim=1)
 
-        return self.bpr_loss(pos_scores, neg_scores)
+        return self.loss(pos_scores, neg_scores)
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
@@ -167,7 +172,6 @@ class LightGCN(PJFModel):
 
         u_embeddings = user_all_embeddings[user]
         i_embeddings = item_all_embeddings[item]
-
         scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
         return scores
 

@@ -54,7 +54,6 @@ class Evaluator:
         result = {}
         result.update(self._calcu_ranking_metrics(uid2topk))
         result.update(self._calcu_cls_metrics(uid2topk))
-        # pdb.set_trace()
 
         for m in result:
             result[m] = round(result[m], self.precision)

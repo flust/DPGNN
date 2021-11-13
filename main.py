@@ -1,7 +1,7 @@
-import argparse
 from logging import getLogger
 import wandb
 import os
+import sys
 
 from config import Config
 from data.dataset import create_datasets
@@ -10,18 +10,20 @@ from trainer import Trainer
 from utils import init_seed, init_logger, dynamic_load
 
 def get_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model', '-m', type=str, help='Model to test.', default='BGPJF')
-    parser.add_argument('--name', '-n', type=str, help='Name of this run.')
-    parser.add_argument('--direction', '-d', type=str, help='direction to evaluate', default='multi')
-    parser.add_argument('--embedding_size', '-es', type=int, help='embedding size')
-    parser.add_argument('--learning_rate', '-lr', type=float, help='learning rate')
-    parser.add_argument('--dropout', '-do', type=float, help='dropout', default=0.2)
-    parser.add_argument('--gpu_id', '-g', type=int, help='gpu_id', default=0)
-    parser.add_argument('--n_layers', '-nl', type=int, help='n_layers', default=2)
-    args = parser.parse_args()
+    args = dict()
+    for arg in sys.argv[1:]:
+        arg_name, arg_value = arg.split('=')
+        try:
+            arg_value = int(arg_value)
+        except:
+            try:
+                arg_value = float(arg_value)
+            except:
+                pass
+        arg_name = arg_name.strip('-')
+        args[arg_name] = arg_value
+    print(args)
     return args
-
 
 def main_process(model, config_dict=None, saved=True):
     """Main process API for experiments of VPJF
@@ -70,11 +72,12 @@ def main_process(model, config_dict=None, saved=True):
     
     # model training
     best_valid_score, best_valid_result_g, best_valid_result_j = trainer.fit(train_data, valid_data_g, valid_data_j, saved=saved)
+    
     logger.info('best valid result for geek: {}'.format(best_valid_result_g))
     logger.info('best valid result for job: {}'.format(best_valid_result_j))
 
-    import pdb
-    pdb.set_trace()
+    # import pdb
+    # pdb.set_trace()
     # model evaluation for user
     test_result, test_result_str = trainer.evaluate(test_data_g, load_best_model=True)
     wandb.log(test_result)
@@ -97,12 +100,4 @@ def main_process(model, config_dict=None, saved=True):
 
 if __name__ == "__main__":
     args = get_arguments()    
-    main_process(model=args.model, config_dict={
-        'name': args.name,
-        'direction': args.direction,
-        'embedding_size': args.embedding_size,
-        'learning_rate': args.learning_rate,
-        'dropout': args.dropout,
-        'gpu_id': args.gpu_id,
-        'n_layers': args.n_layers
-    })
+    main_process(model=args['model'], config_dict=args)

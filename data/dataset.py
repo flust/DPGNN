@@ -12,29 +12,20 @@ import random
 
 def create_datasets(config, pool):
     data_list = []
-    train_or_evaluate = []
-    if config['direction'] == 'geek':
-        # train model on user data 
+    if config['pattern'] == 'geek':
+        # train on user data 
         data_list.extend(['train_g', 'valid_g', 'test_g'])
-        # train_or_evaluate.extend(['train', 'evaluate', 'evaluate'])
-        
-    elif config['direction'] == 'job':
-        # job: train model on job data 
+    elif config['pattern'] == 'job':
+        # train on job data 
         data_list.extend(['train_j', 'valid_j', 'test_j'])
-        # train_or_evaluate.extend(['train', 'evaluate', 'evaluate'])
-
-    else:
-        # others: train model on full data
-        # origin data
+    else:  
+        # others: train on full data
         data_list.extend(['train_all', 'valid_g', 'valid_j'])
-        # train_or_evaluate.extend(['train', 'evaluate', 'evaluate'])
         
-        # train data add: user_add / job_add  加入开聊数据做训练
         # data_list.extend(['train_all_add', 'valid_g', 'test_g'])
-    
-    # test set for geek & test set for job
-    data_list.extend(['test_g', 'test_j'])
-    # train_or_evaluate.extend(['evaluate', 'evaluate'])
+
+        # test set for geek & test set for job
+        data_list.extend(['test_g', 'test_j'])
 
     return [
         dynamic_load(config, 'data.dataset', 'Dataset')(config, pool, phase)
@@ -113,7 +104,7 @@ class MFDataset(PJFDataset):
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in tqdm(file):
                 geek_token, job_token, label = line.strip().split('\t')[:3]
-                if self.phase[0:5] == 'train' and label[0] == '0':
+                if self.phase[0:5] == 'train' and label[0] == '0':  # 训练过程只保留正例
                     continue
                 geek_id = self.geek_token2id[geek_token]
                 self.geek_ids.append(geek_id)
@@ -123,8 +114,6 @@ class MFDataset(PJFDataset):
         self.geek_ids = torch.LongTensor(self.geek_ids)
         self.job_ids = torch.LongTensor(self.job_ids)
         self.labels = torch.FloatTensor(self.labels)
-        # import pdb
-        # pdb.set_trace()
 
     def __getitem__(self, index):
         geek_id = self.geek_ids[index]
@@ -136,6 +125,18 @@ class MFDataset(PJFDataset):
             neg_job = random.randint(1, self.job_num - 1)
         while neg_geek in self.pool.job2geeks[job_id]:
             neg_geek = random.randint(1, self.geek_num - 1)
+
+        # geek_id = self.geek_ids[index]
+        # if len(self.pool.geek2neg[geek_id]) == 0:
+        #     neg_job = random.randint(1, self.job_num - 1)
+        # else:
+        #     neg_job = random.randint(1, len(self.pool.geek2neg[geek_id]))
+        #     neg_job = self.pool.geek2neg[geek_id][neg_job]
+
+        # job_id = self.job_ids[index]
+        # neg_geek = random.randint(1, len(self.pool.job2neg[job_id]))
+        # neg_geek = self.pool.job2neg[job_id][neg_geek]
+        # print(neg_job)
         
         return {
             'geek_id': self.geek_ids[index],
@@ -153,6 +154,11 @@ class NCFDataset(MFDataset):
 class LightGCNDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(LightGCNDataset, self).__init__(config, pool, phase)
+
+
+class LightGCN2Dataset(MFDataset): 
+    def __init__(self, config, pool, phase):
+        super(LightGCN2Dataset, self).__init__(config, pool, phase)
 
 
 class MultiGCNDataset(PJFDataset):

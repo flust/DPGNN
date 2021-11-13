@@ -4,8 +4,8 @@ from torch.utils.data import DataLoader
 def construct_dataloader(config, datasets):
     param_list = [
         [*datasets],
-        [config['train_batch_size']] * 1 + [config['eval_batch_size']] * 5,
-        [True, True, True, True, True],
+        [config['train_batch_size']] * 1 + [config['eval_batch_size']] * 4,
+        [True, False, False, False, False],
         [config['num_workers']] * 5,
         [config['pin_memory']] * 5
     ]

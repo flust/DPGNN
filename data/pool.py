@@ -135,15 +135,20 @@ class MFPool(PJFPool):
     def _load_inter(self):
         self.geek2jobs = DefaultDict(list)
         self.job2geeks = DefaultDict(list)
+        self.geek2neg = DefaultDict(list)
+        self.job2neg = DefaultDict(list)
 
         data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
         for l in tqdm(data_all):
-            gid, jid, _ = l.split('\t')
+            gid, jid, label = l.split('\t')
             gid = self.geek_token2id[gid]
             jid = self.job_token2id[jid]
-
-            self.geek2jobs[gid].append(jid)
-            self.job2geeks[jid].append(gid)
+            if label[0] == '1':
+                self.geek2jobs[gid].append(jid)
+                self.job2geeks[jid].append(gid)
+            else:
+                self.geek2neg[gid].append(jid)
+                self.job2neg[jid].append(gid)
             
 
 class NCFPool(MFPool):
@@ -168,22 +173,30 @@ class LightGCNPool(MFPool):
         self.geek_ids, self.job_ids, self.labels = [], [], []
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in tqdm(file):
-                # pdb.set_trace()
                 geek_token, job_token, label = line.strip().split('\t')[:3]
+
                 geek_id = self.geek_token2id[geek_token]
-                self.geek_ids.append(geek_id)
                 job_id = self.job_token2id[job_token]
+
+                self.geek_ids.append(geek_id)
                 self.job_ids.append(job_id)
                 self.labels.append(int(label))
+                # self.labels.append(1)
+
         self.geek_ids = torch.LongTensor(self.geek_ids)
         self.job_ids = torch.LongTensor(self.job_ids)
         self.labels = torch.FloatTensor(self.labels)
+        
         src = self.geek_ids[self.labels == 1]
         tgt = self.job_ids[self.labels == 1]
         data = self.labels[self.labels == 1]
-        # import pdb
-        # pdb.set_trace()
         self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
+
+
+class LightGCN2Pool(LightGCNPool):
+    def __init__(self, config):
+        super(LightGCN2Pool, self).__init__(config)
+
 
 class SingleBERTPool(PJFPool):
     def __init__(self, config):

@@ -1,8 +1,6 @@
 from copy import deepcopy
 from logging import getLogger
 
-# import wandb
-
 from config import Config
 from data.dataset import create_datasets
 from data.dataloader import construct_dataloader
@@ -11,16 +9,15 @@ from utils import init_seed, init_logger, dynamic_load
 import itertools
 import wandb
 
-MODEL = 'MF'
+MODEL = 'LightGCN2'
 metrics = ['gauc', 'p@5', 'r@5', 'mrr']
 all_params = {
-    'embedding_size': [8, 16],
     # 'embedding_size': [128, 256],
-    # 'n_layers': [2, 3],
+    'n_layers': [2, 3],
     # 'sample_n': [3, 5, 8],
     # 'lambda_1': [0.01, 0.1, 0.5],
     # 'lambda_2': [0.01, 0.1, 0.5],
-    # 'learning_rate': [0.01, 0.001, 0.0003],
+    'learning_rate': [0.001, 0.00001],
 }
 
 def hyper_opt_preparation(model):
@@ -71,12 +68,10 @@ def single_run(config, pool, train_data, valid_data_g, valid_data_j, test_data_g
 
     # model evaluation for user
     test_result_g, test_result_str_g = trainer.evaluate(test_data_g, load_best_model=True)
-    # wandb.log(test_result_g)
     logger.info('test for user result [all]: {}'.format(test_result_str_g))
 
     # model evaluation for job
     test_result_j, test_result_str_j = trainer.evaluate(test_data_j, load_best_model=True, reverse=True)
-    # wandb.log(test_result_j)
     logger.info('test for job result [all]: {}'.format(test_result_str_j))
 
     return best_valid_score, test_result_g, test_result_j, test_result_str_g, test_result_str_j
@@ -119,7 +114,8 @@ if __name__ == "__main__":
         params['config'].params.update(cur_params)
         logger.info(f'RUN-ID-{run_id}')
         run_id += 1
-        # print(cur_params)
+        logger.info(params['config'])
+
         valid_score, test_result_g, test_result_j, test_result_str_g, test_result_str_j = single_run(**params)
 
         if valid_score > best_valid_score:
@@ -129,7 +125,7 @@ if __name__ == "__main__":
             best_param = cur_params
 
     logger.info('best params: {}'.format(str(best_param)))
-    logger.info('best model test for geek result [all]: {}'.format(test_result_str_g))
-    logger.info('best model test for job result [all]: {}'.format(test_result_str_j))
+    logger.info('best model test for geek result [all]: {}'.format(best_valid_test_str_g))
+    logger.info('best model test for job result [all]: {}'.format(best_valid_test_str_j))
 
 
