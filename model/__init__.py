@@ -6,7 +6,6 @@ from model.APJFNN import APJFNN
 from model.BERT import BERT
 from model.VPJFv9 import VPJFv9
 from model.LightGCN import LightGCN
-from model.LightGCN2 import LightGCN2
 from model.MultiGCN import MultiGCN
 from model.MultiPJF import MultiPJF
 from model.NCF import NCF

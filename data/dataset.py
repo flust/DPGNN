@@ -126,6 +126,7 @@ class MFDataset(PJFDataset):
         while neg_geek in self.pool.job2geeks[job_id]:
             neg_geek = random.randint(1, self.geek_num - 1)
 
+        # 强负例负采样
         # geek_id = self.geek_ids[index]
         # if len(self.pool.geek2neg[geek_id]) == 0:
         #     neg_job = random.randint(1, self.job_num - 1)
@@ -151,17 +152,12 @@ class NCFDataset(MFDataset):
         super(NCFDataset, self).__init__(config, pool, phase)
 
 
-class LightGCNDataset(MFDataset):
+class LightGCNDataset(MFDataset): 
     def __init__(self, config, pool, phase):
         super(LightGCNDataset, self).__init__(config, pool, phase)
 
 
-class LightGCN2Dataset(MFDataset): 
-    def __init__(self, config, pool, phase):
-        super(LightGCN2Dataset, self).__init__(config, pool, phase)
-
-
-class MultiGCNDataset(PJFDataset):
+class MultiGCNDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(MultiGCNDataset, self).__init__(config, pool, phase)
 

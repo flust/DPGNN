@@ -29,7 +29,7 @@ class MF(PJFModel):
         #                 self.BERT_e_size).to(self.config['device'])
         #     self._load_bert()
 
-        self.sigmoid = nn.Sigmoid()
+        # self.sigmoid = nn.Sigmoid()
         # self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
         self.loss = BPRLoss().to(config['device'])
 
@@ -67,10 +67,10 @@ class MF(PJFModel):
         # scores = self.forward(interaction)
         # return self.loss(scores, label)
 
-        label = interaction['label']
         geek_id = interaction['geek_id']
         job_id = interaction['job_id']
         neg_id = interaction['neg_job']
+
         geek_vec = self.geek_emb(geek_id)
         job_vec = self.job_emb(job_id)
         neg_vec = self.job_emb(neg_id)
@@ -81,7 +81,7 @@ class MF(PJFModel):
         return self.loss(pos_scores, neg_scores)
 
     def predict(self, interaction):
-        return self.sigmoid(self.forward(interaction))
+        return self.forward(interaction)
 
     # def _load_bert(self):
         # self.bert_user = torch.FloatTensor([]).to(self.config['device'])

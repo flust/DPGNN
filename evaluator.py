@@ -20,7 +20,7 @@ class Evaluator:
         self.topk = config['topk']
         self.maxtopk = max(self.topk)
         self.precision = config['metric_decimal_place']
-        self.metrics = ['gauc', 'p@5', 'r@5', 'mrr']
+        self.metrics = ['r@5', 'p@5', 'ndcg@5', 'mrr']
 
         self.base = []
         self.idcg = []

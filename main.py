@@ -70,6 +70,8 @@ def main_process(model, config_dict=None, saved=True):
     # trainer loading and initialization
     trainer = Trainer(config, model)
     
+    # import pdb
+    # pdb.set_trace()
     # model training
     best_valid_score, best_valid_result_g, best_valid_result_j = trainer.fit(train_data, valid_data_g, valid_data_j, saved=saved)
     

@@ -1,5 +1,6 @@
 from copy import deepcopy
 from logging import getLogger
+import sys
 
 from config import Config
 from data.dataset import create_datasets
@@ -9,16 +10,49 @@ from utils import init_seed, init_logger, dynamic_load
 import itertools
 import wandb
 
-MODEL = 'LightGCN2'
-metrics = ['gauc', 'p@5', 'r@5', 'mrr']
-all_params = {
-    # 'embedding_size': [128, 256],
-    'n_layers': [2, 3],
-    # 'sample_n': [3, 5, 8],
-    # 'lambda_1': [0.01, 0.1, 0.5],
-    # 'lambda_2': [0.01, 0.1, 0.5],
-    'learning_rate': [0.001, 0.00001],
+
+params_range = dict()
+params_range['MF'] = {   
+    'embedding_size': [128],
+    'learning_rate': [0.001, 0.0001, 0.00001],
 }
+
+params_range['NCF'] = {
+    'embedding_size': [64],  # NCF embedding_size 减半，因为 user/item 都有两个 embedding
+    'hidden_layer': [[32], [32,16], [32,16,8]],
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
+
+params_range['LightGCN2'] = {
+    'embedding_size': [128],
+    'n_layers': [1, 2, 3, 4],
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
+
+params_range['MultiGCN'] = {
+    'embedding_size': [64, 128],   # 因为拆点,embedding_size 减半，同NCF
+    'add_sample_rate': [0.2, 0.3, 0.5], # 开聊数据全部读进来会爆显存，embedding_size 128 时最多采 0.3 的比例
+    'ADD_BLOSS': [False, True],   # 双边采负例的 loss
+    'ADD_MLOSS': [False, True],   # 互信息最大化的 loss
+    'n_layers': [2, 3],
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
+
+
+def get_arguments():
+    args = dict()
+    for arg in sys.argv[1:]:
+        arg_name, arg_value = arg.split('=')
+        try:
+            arg_value = int(arg_value)
+        except:
+            try:
+                arg_value = float(arg_value)
+            except:
+                pass
+        arg_name = arg_name.strip('-')
+        args[arg_name] = arg_value
+    return args
 
 def hyper_opt_preparation(model):
     # configurations initialization
@@ -81,13 +115,17 @@ if __name__ == "__main__":
     run_id = 0
 
     # get config
+    args = get_arguments()
+    MODEL = args['model'] 
     params = hyper_opt_preparation(model=MODEL)
     logger = getLogger()
     ori_config = params['config']
 
     # get all param group
-    param_names = list(all_params.keys())
-    params_group = itertools.product(*list(all_params.values()))   
+    param_names = list(params_range[MODEL].keys())
+    params_group = itertools.product(*list(params_range[MODEL].values()))   
+    logger.info("All parameters range: ", str(params_range[MODEL]))
+
     cur_params = dict()
 
     # best valid score and param
@@ -122,7 +160,7 @@ if __name__ == "__main__":
             best_valid_score = valid_score
             best_valid_test_str_g = test_result_str_g
             best_valid_test_str_j = test_result_str_j
-            best_param = cur_params
+            best_param = deepcopy(cur_params)
 
     logger.info('best params: {}'.format(str(best_param)))
     logger.info('best model test for geek result [all]: {}'.format(best_valid_test_str_g))

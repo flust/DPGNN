@@ -15,7 +15,7 @@ pos_weight: 1
 
 # Evaluation
 topk: [5]
-valid_metric: gauc
+valid_metric: r@5
 
 # DataLoader
 num_workers: 4

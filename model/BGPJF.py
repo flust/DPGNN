@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 from torch.nn.init import normal_
 from model.abstract import PJFModel
-from model.layer import GCNConv, GATConv
+from model.layer import GCNConv
 # from torch_geometric.nn import GATConv
 import pdb
 
@@ -253,9 +253,9 @@ class BGPJF(PJFModel):
         job_neg_list = torch.gather(self.pool.job2geeks_neg[pos_job].to(self.config['device']), 1, j_n_idx)
         u_neg = job_neg_list.view(-1).type(torch.long)
         j_pos = (pos_job.repeat(self.pool.sample_n, 1).T).reshape(-1)
-        geek_neg_score = torch.mul(user_e_p[u_neg] + user_e_c[u_neg], item_e_p[j_pos] + item_e_c[j_pos]).sum(dim=1)
+        job_neg_score = torch.mul(user_e_p[u_neg] + user_e_c[u_neg], item_e_p[j_pos] + item_e_c[j_pos]).sum(dim=1)
 
-        loss = self.loss_fct(user_self_score, geek_neg_score) + self.loss_fct(item_self_score, geek_neg_score)
+        loss = self.loss_fct(user_self_score, geek_neg_score) + self.loss_fct(item_self_score, job_neg_score)
         return loss
 
     def bilateral_loss(self, scores, interaction):

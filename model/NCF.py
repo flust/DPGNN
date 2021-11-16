@@ -39,10 +39,9 @@ class NCF(PJFModel):
 
         self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size, self.dropout_prob)
         self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1)
-        self.sigmoid = nn.Sigmoid()
-        # self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
         self.loss = BPRLoss()
-
+        # self.sigmoid = nn.Sigmoid()
+        # self.loss = nn.BCELoss()
         # parameters initialization
         self.apply(self._init_weights)
 
@@ -71,6 +70,7 @@ class NCF(PJFModel):
         output = self.predict_layer(torch.cat((mf_output, mlp_output), -1))
 
         return output.squeeze()
+        # return self.sigmoid(output).squeeze()
 
     def calculate_loss(self, interaction):
         geek_id = interaction['geek_id']
@@ -80,7 +80,6 @@ class NCF(PJFModel):
         pos_scores = self.forward(geek_id, job_id)
         neg_scores = self.forward(geek_id, neg_id)
 
-        # print(neg_scores)
         return self.loss(pos_scores, neg_scores)
 
         user = interaction['geek_id']
@@ -94,7 +93,7 @@ class NCF(PJFModel):
     def predict(self, interaction):
         user = interaction['geek_id']
         item = interaction['job_id']
-        return self.sigmoid(self.forward(user, item))
+        return self.forward(user, item)
 
     # def _load_bert(self):
     #     self.bert_user = torch.FloatTensor([]).to(self.config['device'])
