@@ -2,10 +2,10 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import Parameter, Linear
 from torch.nn.init import normal_
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree, remove_self_loops, softmax
+from torch.nn import Linear
 
 from typing import Union, Tuple, Optional, Any
 
@@ -203,31 +203,56 @@ class GCNConv(MessagePassing):
 
 
 class GNNConv(MessagePassing):
-    def __init__(self, dim):
+    def __init__(self, dim, n_geek, n_job):
         super(GNNConv, self).__init__(node_dim=0, aggr='add')
         self.dim = dim
-        self.att_src = Parameter(torch.Tensor(1, dim))
-        self.att_dst = Parameter(torch.Tensor(1, dim))
+        # self.n_geek = n_geek
+        # self.n_job = n_job
+        # self.lin_geek = Linear(dim, dim, bias=False)
+        # self.lin_job = Linear(dim, dim, bias=False)
 
     def forward(self, x, edge_index, edge_weight):
-        # x: torch.Size([209448, 128])
-        # edge_index: torch.Size([2, 5706724])
-        # edge_weight: torch.Size([5706724])
-        alpha_src = (x * self.att_src).sum(dim=-1)
-        alpha_dst = (x * self.att_dst).sum(dim=-1)
-        alpha = (alpha_src, alpha_dst)
-        return self.propagate(edge_index, x=x, alpha=alpha, edge_weight=edge_weight)
+        # user_e_a, item_e_p, user_e_p, item_e_a = torch.split(x, 
+        #             [self.n_geek, self.n_job, self.n_geek, self.n_job])
+        # user_embeddings_a = self.lin_geek(user_e_a)
+        # item_embeddings_p = self.lin_job(item_e_p)
+        # user_embeddings_p = self.lin_geek(user_e_p)
+        # item_embeddings_a = self.lin_job(item_e_a)
 
-    def message(self, x_j, alpha_j, edge_weight, index):
-        # x_j: torch.Size([5706724, 128])
-        # edge_weight: torch.Size([5706724])
-        # index: torch.Size([5706724])
-        
-        alpha = F.leaky_relu(alpha_j, 0.2)
-        alpha = softmax(alpha, index)
-        # alpha: torch.Size([5706724])
+        # x = torch.cat([user_embeddings_a,
+        #                     item_embeddings_p,
+        #                     user_embeddings_p,
+        #                     item_embeddings_a], dim=0)
 
-        return x_j * alpha.unsqueeze(-1)
+        return self.propagate(edge_index, x=x, edge_weight=edge_weight)
+
+
+    def message(self, x_j, edge_weight):
+        return edge_weight.view(-1, 1) * x_j
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.dim)
+
+
+
+
+        # self.att_src = Parameter(torch.Tensor(1, dim))
+        # self.att_dst = Parameter(torch.Tensor(1, dim))
+
+    # def forward(self, x, edge_index, edge_weight):
+        # attention 部分
+        # x: torch.Size([209448, 128])
+        # edge_index: torch.Size([2, 5706724])
+        # alpha_src = (x * self.att_src).sum(dim=-1)
+        # alpha_dst = (x * self.att_dst).sum(dim=-1)
+        # alpha = (alpha_src, alpha_dst)
+        # return self.propagate(edge_index, x=x, alpha=alpha)
+
+    # def message(self, x_j, alpha_j, edge_weight, index):
+        # attention 部分
+        # x_j: torch.Size([5706724, 128])
+        # edge_weight: torch.Size([5706724])
+        # index: torch.Size([5706724])
+        # alpha = F.leaky_relu(alpha_j, 0.2)
+        # alpha = softmax(alpha, index) # torch.Size([5706724])
+        # return x_j * alpha.unsqueeze(-1)

@@ -32,14 +32,14 @@ class MultiGNN(PJFModel):
         self.item_embedding_a = nn.Embedding(self.n_items, self.latent_dim)
         self.user_embedding_p = nn.Embedding(self.n_users, self.latent_dim)
         self.item_embedding_p = nn.Embedding(self.n_items, self.latent_dim)
-        self.gcn_conv = GNNConv(dim=self.latent_dim)
+        self.gcn_conv = GNNConv(dim=self.latent_dim, n_geek=self.n_users, n_job=self.n_items)
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
         self.loss = 0
 
         # attention
-        self.W_c = nn.Linear(self.latent_dim, self.latent_dim)
-        self.W_j = nn.Linear(self.latent_dim, self.latent_dim)
+        # self.W_c = nn.Linear(self.latent_dim, self.latent_dim)
+        # self.W_j = nn.Linear(self.latent_dim, self.latent_dim)
         # self.c_attn = nn.Linear(self.latent_dim, 1)
         # self.j_attn = nn.Linear(self.latent_dim, 1)
 
@@ -130,21 +130,11 @@ class MultiGNN(PJFModel):
     def forward(self):
         all_embeddings = self.get_ego_embeddings()
         embeddings_list = [all_embeddings]
+
         for layer_idx in range(self.n_layers):
-            # ==== MultiGNN v1
-            # user_e_a, item_e_p, user_e_p, item_e_a = torch.split(all_embeddings, 
-            #             [self.n_users, self.n_items, self.n_users, self.n_items])
-
-            # user_e_a = self.W_c(user_e_a)
-            # user_e_p = self.W_c(user_e_p)
-            # item_e_a = self.W_j(item_e_a)
-            # item_e_p = self.W_j(item_e_p)
-
-            # all_embeddings = torch.cat([user_e_a, item_e_p, user_e_p, item_e_a], dim=0)
-                                
-            # ====
             all_embeddings = self.gcn_conv(all_embeddings, self.edge_index, self.edge_weight)
             embeddings_list.append(all_embeddings)
+
         lightgcn_all_embeddings = torch.stack(embeddings_list, dim=1)
         lightgcn_all_embeddings = torch.mean(lightgcn_all_embeddings, dim=1)
 
