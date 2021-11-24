@@ -7,9 +7,9 @@ reg_weight: 1e-05
 
 # Training
 learning_rate: 0.001
-# add_sample_rate: 0.3
-ADD_BLOSS: False
-ADD_MLOSS: False
+add_sample_rate: 0.3
+ADD_BLOSS: True
+ADD_BLOSS: True
 
 # General
 train_batch_size: 4096

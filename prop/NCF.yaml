@@ -2,7 +2,7 @@
 # embedding_size: 64
 mf_embedding_size: 64
 mlp_embedding_size: 64
-mlp_hidden_size: [32,8]
+mlp_hidden_size: [64]
 
 ADD_BERT: False
 BERT_embedding_size: 768

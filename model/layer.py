@@ -134,23 +134,6 @@ class FusionLayer(nn.Module):
         return torch.cat([a, b], dim=-1)
 
 
-# class GCNConv(MessagePassing):
-#     def __init__(self, in_channels, out_channels):
-#         super(GCNConv, self).__init__(aggr='add') 
-
-#     def forward(self, x, edge_index):
-#         # add self loops
-#         edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))
-#         row, col = edge_index
-#         deg = degree(col, x.size(0), dtype=x.dtype)
-#         deg_inv_sqrt = deg.pow(-0.5)
-#         norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-#         return self.propagate(edge_index, x=x, norm=norm)
-
-#     def message(self, x_j, norm):
-#         return norm.view(-1, 1) * x_j
-
-
 class BPRLoss(nn.Module):
     def __init__(self, gamma=1e-10):
         super(BPRLoss, self).__init__()
@@ -158,6 +141,17 @@ class BPRLoss(nn.Module):
 
     def forward(self, pos_score, neg_score):
         loss = -torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        return loss
+
+
+class BiBPRLoss(nn.Module):
+    def __init__(self, gamma=1e-10):
+        super(BiBPRLoss, self).__init__()
+        self.gamma = gamma
+
+    def forward(self, pos_score, neg_score_g, neg_score_j, omega = 1):
+        loss = - torch.log(self.gamma + torch.sigmoid(pos_score - neg_score_g)).mean() \
+                - omega * torch.log(self.gamma + torch.sigmoid(pos_score - neg_score_j)).mean()
         return loss
 
 
@@ -187,6 +181,56 @@ class GCNConv(MessagePassing):
 
     def message(self, x_j, edge_weight):
         return edge_weight.view(-1, 1) * x_j
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.dim)
+
+
+# MultiGNN v1
+# class GNNConv(MessagePassing):
+#     def __init__(self, dim):
+#         super(GNNConv, self).__init__(aggr='add')
+#         self.dim = dim
+
+#     def forward(self, x, edge_index, edge_weight):
+#         return self.propagate(edge_index, x=x, edge_weight=edge_weight)
+
+#     def message(self, x_j, edge_weight):
+#         return edge_weight.view(-1, 1) * x_j
+
+#     def __repr__(self):
+#         return '{}({})'.format(self.__class__.__name__, self.dim)
+
+
+class GNNConv(MessagePassing):
+    def __init__(self, dim):
+        super(GNNConv, self).__init__(node_dim=0, aggr='add')
+        self.dim = dim
+        self.att_src = Parameter(torch.Tensor(1, dim))
+        self.att_dst = Parameter(torch.Tensor(1, dim))
+
+    def forward(self, x, edge_index, edge_weight):
+        # x: torch.Size([209448, 128])
+        # edge_index: torch.Size([2, 5706724])
+        # edge_weight: torch.Size([5706724])
+        alpha_src = (x * self.att_src).sum(dim=-1)
+        alpha_dst = (x * self.att_dst).sum(dim=-1)
+        alpha = (alpha_src, alpha_dst)
+        # import pdb
+        # pdb.set_trace()
+
+
+        return self.propagate(edge_index, x=x, alpha=alpha, edge_weight=edge_weight)
+
+    def message(self, x_j, alpha_j, edge_weight, index):
+        # x_j: torch.Size([5706724, 128])
+        # edge_weight: torch.Size([5706724])
+        # index: torch.Size([5706724])
+        
+        alpha = F.leaky_relu(alpha_j)
+        alpha = softmax(alpha, index)
+        # alpha: torch.Size([5706724])
+        return x_j * alpha.unsqueeze(-1)
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.dim)

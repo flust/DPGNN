@@ -1,6 +1,6 @@
 # Device
 use_gpu: True
-gpu_id: 0
+gpu_id: 1
 
 # Training
 learner: Adam
@@ -11,7 +11,7 @@ clip_grad_norm: ~
 # pos_weight: 8.633  # 
 # pos_weight: 5.246  # 
 # pos_weight: 0.6267 # 开聊数据作为正例加入训练
-pos_weight: 1
+# pos_weight: 1
 
 # Evaluation
 topk: [5]

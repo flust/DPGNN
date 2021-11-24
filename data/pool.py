@@ -47,85 +47,6 @@ class PopPool(PJFPool):
     def __init__(self, config):
         super(PopPool, self).__init__(config)
 
-# class MultiGCNPool(PJFPool):
-#     def __init__(self, config):
-#         super(MultiGCNPool, self).__init__(config)
-#         self.success_edge = self._get_edge(os.path.join(self.config['dataset_path'], f'data.train_all'))
-#         self.user_add_edge = self._get_edge(os.path.join(self.config['dataset_path'], f'data.user_add'))
-#         self.job_add_edge = self._get_edge(os.path.join(self.config['dataset_path'], f'data.job_add'))
-
-#     def _get_edge(self, filepath):
-#         self.geek_ids, self.job_ids, self.labels = [], [], []
-
-#         with open(filepath, 'r', encoding='utf-8') as file:
-#             for line in tqdm(file):
-#                 geek_token, job_token, label = line.strip().split('\t')[:3]
-#                 if(int(label) == 0): continue
-#                 geek_id = self.geek_token2id[geek_token]
-#                 self.geek_ids.append(geek_id)
-#                 job_id = self.job_token2id[job_token]
-#                 self.job_ids.append(job_id)
-#                 self.labels.append(int(label))
-
-#         self.geek_ids = torch.LongTensor(self.geek_ids)
-#         self.job_ids = torch.LongTensor(self.job_ids)
-#         self.labels = torch.FloatTensor(self.labels)
-
-#         return [self.geek_ids, self.job_ids]
-
-# class BGPJFPool(MultiGCNPool):
-#     def __init__(self, config):
-#         super(BGPJFPool, self).__init__(config)
-#         self.sample_n = config['sample_n']
-#         self._load_neg()
-#         if(config['ADD_BERT']):
-#             self._load_bert()
-
-#     def _load_neg(self):
-#         # save neg sample
-#         self.geek2jobs_neg = torch.zeros(self.geek_num, 1000)
-#         self.geek2jobs_neg_num = DefaultDict(int)
-#         self.job2geeks_neg = torch.zeros(self.job_num, 1000)
-#         self.job2geeks_neg_num = DefaultDict(int)
-
-#         data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
-#         for l in tqdm(data_all):
-#             gid, jid, label = l.split('\t')
-#             if label == '1\n':
-#                 continue
-#             gid = self.geek_token2id[gid]
-#             jid = self.job_token2id[jid]
-
-#             self.geek2jobs_neg[gid][self.geek2jobs_neg_num[gid]] = jid
-#             self.geek2jobs_neg_num[gid] += 1
-#             self.job2geeks_neg[jid][self.job2geeks_neg_num[gid]] = gid
-#             self.job2geeks_neg_num[jid] += 1
-
-#     def _load_bert(self):
-#         u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
-#         self.logger.info(f'Loading from {u_filepath}')
-#         j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
-#         # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
-#         self.logger.info(f'Loading from {j_filepath}')
-
-#         u_array = np.load(u_filepath).astype(np.float64)
-#         # add padding 
-#         u_array = np.vstack([u_array, np.zeros((1, u_array.shape[1]))])
-
-#         j_array = np.load(j_filepath).astype(np.float64)
-#         # add padding
-#         j_array = np.vstack([j_array, np.zeros((1, j_array.shape[1]))])
-
-#         self.geek_token2bertid = {}
-#         self.job_token2bertid = {}
-#         for i in range(u_array.shape[0]):
-#             self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
-#         for i in range(j_array.shape[0]):
-#             self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
-
-#         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
-#         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
-
 
 class MFPool(PJFPool):
     def __init__(self, config):
@@ -159,17 +80,11 @@ class NCFPool(MFPool):
 class LightGCNPool(MFPool):
     def __init__(self, config):
         super(LightGCNPool, self).__init__(config)
-        self.addfriend_in_graph = self.config['addfriend_in_graph']
-        self._load_edge()
-    
-    def _load_edge(self):
-        if(self.addfriend_in_graph):
-            filepath = os.path.join(self.config['dataset_path'], f'data.train_all_add')
-        else:
-            filepath = os.path.join(self.config['dataset_path'], f'data.train_all')
+        success_file = os.path.join(self.config['dataset_path'], f'data.train_all')
+        self.interaction_matrix = self._load_edge(success_file)
 
+    def _load_edge(self, filepath):
         self.logger.info(f'Loading from {filepath}')
-
         self.geek_ids, self.job_ids, self.labels = [], [], []
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in tqdm(file):
@@ -177,47 +92,9 @@ class LightGCNPool(MFPool):
 
                 geek_id = self.geek_token2id[geek_token]
                 job_id = self.job_token2id[job_token]
-
                 self.geek_ids.append(geek_id)
                 self.job_ids.append(job_id)
                 self.labels.append(int(label))
-                # self.labels.append(1)
-
-        self.geek_ids = torch.LongTensor(self.geek_ids)
-        self.job_ids = torch.LongTensor(self.job_ids)
-        self.labels = torch.FloatTensor(self.labels)
-        
-        src = self.geek_ids[self.labels == 1]
-        tgt = self.job_ids[self.labels == 1]
-        data = self.labels[self.labels == 1]
-        self.interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
-
-
-class MultiGCNPool(MFPool):
-    def __init__(self, config):
-        super(MultiGCNPool, self).__init__(config)
-        success_file = os.path.join(self.config['dataset_path'], f'data.train_all')
-        user_add_file = os.path.join(self.config['dataset_path'], f'data.user_add')
-        job_add_file = os.path.join(self.config['dataset_path'], f'data.job_add')
-
-        add_sample_rate = config['add_sample_rate']
-        self.interaction_matrix = self._load_edge(success_file)
-        self.user_add_matrix = self._load_edge(user_add_file, sample_rate=add_sample_rate)
-        self.job_add_matrix = self._load_edge(job_add_file, sample_rate=add_sample_rate)
-
-    def _load_edge(self, filepath, sample_rate=1):
-        self.logger.info(f'Loading from {filepath}')
-        self.geek_ids, self.job_ids, self.labels = [], [], []
-        with open(filepath, 'r', encoding='utf-8') as file:
-            for line in tqdm(file):
-                geek_token, job_token, label = line.strip().split('\t')[:3]
-
-                geek_id = self.geek_token2id[geek_token]
-                job_id = self.job_token2id[job_token]
-                if random.random() <= sample_rate:
-                    self.geek_ids.append(geek_id)
-                    self.job_ids.append(job_id)
-                    self.labels.append(int(label))
                 # self.labels.append(1)
 
         self.geek_ids = torch.LongTensor(self.geek_ids)
@@ -229,6 +106,52 @@ class MultiGCNPool(MFPool):
         data = self.labels
         interaction_matrix = coo_matrix((data, (src, tgt)), shape=(self.geek_num, self.job_num))
         return interaction_matrix
+
+
+class LightGCNaPool(LightGCNPool):
+    def __init__(self, config):
+        super(LightGCNaPool, self).__init__(config)
+        user_add_file = os.path.join(self.config['dataset_path'], f'data.user_add')
+        job_add_file = os.path.join(self.config['dataset_path'], f'data.job_add')
+
+        # add_sample_rate = config['add_sample_rate']
+        self.user_add_matrix = self._load_edge(user_add_file)
+        self.job_add_matrix = self._load_edge(job_add_file)
+
+
+class LightGCNbPool(LightGCNPool):
+    def __init__(self, config):
+        super(LightGCNbPool, self).__init__(config)
+
+
+class MultiGCNPool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGCNPool, self).__init__(config)
+
+
+class MultiGCNsPool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGCNsPool, self).__init__(config)
+
+
+class LightGCNalPool(LightGCNaPool):
+    def __init__(self, config):
+        super(LightGCNalPool, self).__init__(config)
+
+
+class MultiGCNslPool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGCNslPool, self).__init__(config)
+
+
+class MultiGCNsl1Pool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGCNsl1Pool, self).__init__(config)
+
+
+class MultiGNNPool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGNNPool, self).__init__(config)
 
 
 class SingleBERTPool(PJFPool):
@@ -619,3 +542,55 @@ class VPJFv9Pool(VPJFPool):
         super(VPJFv9Pool, self).__init__(config)
 
 
+
+# class BGPJFPool(MultiGCNPool):
+#     def __init__(self, config):
+#         super(BGPJFPool, self).__init__(config)
+#         self.sample_n = config['sample_n']
+#         self._load_neg()
+#         if(config['ADD_BERT']):
+#             self._load_bert()
+
+#     def _load_neg(self):
+#         self.geek2jobs_neg = torch.zeros(self.geek_num, 1000)
+#         self.geek2jobs_neg_num = DefaultDict(int)
+#         self.job2geeks_neg = torch.zeros(self.job_num, 1000)
+#         self.job2geeks_neg_num = DefaultDict(int)
+
+#         data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
+#         for l in tqdm(data_all):
+#             gid, jid, label = l.split('\t')
+#             if label == '1\n':
+#                 continue
+#             gid = self.geek_token2id[gid]
+#             jid = self.job_token2id[jid]
+
+#             self.geek2jobs_neg[gid][self.geek2jobs_neg_num[gid]] = jid
+#             self.geek2jobs_neg_num[gid] += 1
+#             self.job2geeks_neg[jid][self.job2geeks_neg_num[gid]] = gid
+#             self.job2geeks_neg_num[jid] += 1
+
+#     def _load_bert(self):
+#         u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
+#         self.logger.info(f'Loading from {u_filepath}')
+#         j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
+#         # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+#         self.logger.info(f'Loading from {j_filepath}')
+
+#         u_array = np.load(u_filepath).astype(np.float64)
+#         # add padding 
+#         u_array = np.vstack([u_array, np.zeros((1, u_array.shape[1]))])
+
+#         j_array = np.load(j_filepath).astype(np.float64)
+#         # add padding
+#         j_array = np.vstack([j_array, np.zeros((1, j_array.shape[1]))])
+
+#         self.geek_token2bertid = {}
+#         self.job_token2bertid = {}
+#         for i in range(u_array.shape[0]):
+#             self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
+#         for i in range(j_array.shape[0]):
+#             self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
+
+#         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
+#         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])

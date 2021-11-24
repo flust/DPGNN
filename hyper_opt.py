@@ -19,25 +19,71 @@ params_range['MF'] = {
 
 params_range['NCF'] = {
     'embedding_size': [64],  # NCF embedding_size 减半，因为 user/item 都有两个 embedding
-    'hidden_layer': [[32], [32,16], [32,16,8]],
-    'learning_rate': [0.001, 0.0001, 0.00001],
+    'mlp_hidden_size': [[32], [32, 16], [32, 16, 8]],
+    'learning_rate': [0.001, 0.0001],
 }
 
-params_range['LightGCN2'] = {
+params_range['LightGCN'] = {
     'embedding_size': [128],
     'n_layers': [1, 2, 3, 4],
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
-params_range['MultiGCN'] = {
-    'embedding_size': [64, 128],   # 因为拆点,embedding_size 减半，同NCF
-    'add_sample_rate': [0.2, 0.3, 0.5], # 开聊数据全部读进来会爆显存，embedding_size 128 时最多采 0.3 的比例
-    'ADD_BLOSS': [False, True],   # 双边采负例的 loss
-    'ADD_MLOSS': [False, True],   # 互信息最大化的 loss
+params_range['LightGCNa'] = {   # 增加了开聊建边的 LightGCN
+    'embedding_size': [128],
     'n_layers': [2, 3],
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
+params_range['LightGCNb'] = {   # 拆点的 LightGCN
+    'embedding_size': [64],  # 因为拆点,embedding_size 减半，同NCF
+    'n_layers': [2, 3],
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
+
+params_range['MultiGCN'] = {
+    'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'n_layers': [2, 3],
+    'learning_rate': [0.001, 0.0001],
+}
+
+params_range['MultiGCNs'] = {
+    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'embedding_size': [128],   # 因为拆点,embedding_size 减半
+    # 'n_layers': [2, 3],
+    'n_layers': [3],
+    # 'learning_rate': [0.001, 0.0001],
+    'learning_rate': [0.001],
+}
+
+params_range['LightGCNal'] = {   # 增加了开聊建边的 LightGCN
+    'embedding_size': [128],
+    'n_layers': [2, 3],
+    'learning_rate': [0.001, 0.0001],
+}
+
+params_range['MultiGCNsl'] = {
+    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'embedding_size': [128],
+    # 'n_layers': [2, 3],
+    'n_layers': [3],
+    'omega': [10, 0.1],
+    # 'learning_rate': [0.001, 0.0001],
+    'learning_rate': [0.001],
+}
+
+params_range['MultiGCNsl1'] = {
+    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'embedding_size': [128],
+    'n_layers': [3],
+    'learning_rate': [0.001],
+}
+
+params_range['MultiGNN'] = {
+    'embedding_size': [64],
+    'n_layers': [3],
+    'learning_rate': [0.001, 0.0001],
+}
 
 def get_arguments():
     args = dict()
@@ -124,7 +170,7 @@ if __name__ == "__main__":
     # get all param group
     param_names = list(params_range[MODEL].keys())
     params_group = itertools.product(*list(params_range[MODEL].values()))   
-    logger.info("All parameters range: ", str(params_range[MODEL]))
+    logger.info("All parameters range: " + str(params_range[MODEL]))
 
     cur_params = dict()
 

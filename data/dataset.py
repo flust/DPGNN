@@ -157,9 +157,44 @@ class LightGCNDataset(MFDataset):
         super(LightGCNDataset, self).__init__(config, pool, phase)
 
 
+class LightGCNaDataset(MFDataset): 
+    def __init__(self, config, pool, phase):
+        super(LightGCNaDataset, self).__init__(config, pool, phase)
+
+
+class LightGCNbDataset(MFDataset): 
+    def __init__(self, config, pool, phase):
+        super(LightGCNbDataset, self).__init__(config, pool, phase)
+
+
 class MultiGCNDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(MultiGCNDataset, self).__init__(config, pool, phase)
+
+
+class MultiGCNsDataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGCNsDataset, self).__init__(config, pool, phase)
+
+
+class LightGCNalDataset(MFDataset): 
+    def __init__(self, config, pool, phase):
+        super(LightGCNalDataset, self).__init__(config, pool, phase)
+
+
+class MultiGCNslDataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGCNslDataset, self).__init__(config, pool, phase)
+
+
+class MultiGCNsl1Dataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGCNsl1Dataset, self).__init__(config, pool, phase)
+
+
+class MultiGNNDataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGNNDataset, self).__init__(config, pool, phase)
 
 
 class BGPJFDataset(PJFDataset):
@@ -355,12 +390,6 @@ class MultiPJFDataset(BERTDataset):
     #         super(BERTDataset, self).__str__(),
     #         f'bert_vec: {self.bert_vec.shape}'
     #     ])
-
-
-class JRMPMDataset(PJFDataset):
-    def __init__(self, config, pool, phase):
-        super(JRMPMDataset, self).__init__(config, pool, phase)
-        self.pool = pool
 
 
 class RawVPJFDataset(PJFDataset):
