@@ -216,10 +216,6 @@ class GNNConv(MessagePassing):
         alpha_src = (x * self.att_src).sum(dim=-1)
         alpha_dst = (x * self.att_dst).sum(dim=-1)
         alpha = (alpha_src, alpha_dst)
-        # import pdb
-        # pdb.set_trace()
-
-
         return self.propagate(edge_index, x=x, alpha=alpha, edge_weight=edge_weight)
 
     def message(self, x_j, alpha_j, edge_weight, index):
@@ -227,9 +223,10 @@ class GNNConv(MessagePassing):
         # edge_weight: torch.Size([5706724])
         # index: torch.Size([5706724])
         
-        alpha = F.leaky_relu(alpha_j)
+        alpha = F.leaky_relu(alpha_j, 0.2)
         alpha = softmax(alpha, index)
         # alpha: torch.Size([5706724])
+
         return x_j * alpha.unsqueeze(-1)
 
     def __repr__(self):

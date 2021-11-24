@@ -48,11 +48,8 @@ params_range['MultiGCN'] = {
 }
 
 params_range['MultiGCNs'] = {
-    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
     'embedding_size': [128],   # 因为拆点,embedding_size 减半
-    # 'n_layers': [2, 3],
     'n_layers': [3],
-    # 'learning_rate': [0.001, 0.0001],
     'learning_rate': [0.001],
 }
 
@@ -65,10 +62,8 @@ params_range['LightGCNal'] = {   # 增加了开聊建边的 LightGCN
 params_range['MultiGCNsl'] = {
     # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
     'embedding_size': [128],
-    # 'n_layers': [2, 3],
     'n_layers': [3],
     'omega': [10, 0.1],
-    # 'learning_rate': [0.001, 0.0001],
     'learning_rate': [0.001],
 }
 
