@@ -149,6 +149,11 @@ class MultiGCNsl1Pool(LightGCNaPool):
         super(MultiGCNsl1Pool, self).__init__(config)
 
 
+class MultiGCNsl1l2Pool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGCNsl1l2Pool, self).__init__(config)
+
+
 class MultiGNNPool(LightGCNaPool):
     def __init__(self, config):
         super(MultiGNNPool, self).__init__(config)

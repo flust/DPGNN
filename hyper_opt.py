@@ -74,6 +74,15 @@ params_range['MultiGCNsl1'] = {
     'learning_rate': [0.001],
 }
 
+params_range['MultiGCNsl1l2'] = {
+    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'embedding_size': [128],
+    'mutual_weight': [0.1, 0.01],
+    'temperature': [0.1, 0.05],
+    'n_layers': [3],
+    'learning_rate': [0.001],
+}
+
 params_range['MultiGNN'] = {
     'embedding_size': [64],
     'n_layers': [3],

@@ -192,6 +192,11 @@ class MultiGCNsl1Dataset(MFDataset):
         super(MultiGCNsl1Dataset, self).__init__(config, pool, phase)
 
 
+class MultiGCNsl1l2Dataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGCNsl1l2Dataset, self).__init__(config, pool, phase)
+
+
 class MultiGNNDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(MultiGNNDataset, self).__init__(config, pool, phase)

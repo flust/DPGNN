@@ -13,6 +13,7 @@ from model.MultiGCNs import MultiGCNs
 from model.LightGCNal import LightGCNal
 from model.MultiGCNsl import MultiGCNsl
 from model.MultiGCNsl1 import MultiGCNsl1
+from model.MultiGCNsl1l2 import MultiGCNsl1l2
 from model.MultiGNN import MultiGNN
 
 from model.MultiPJF import MultiPJF
