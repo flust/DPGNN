@@ -91,6 +91,7 @@ class Trainer(object):
                 desc=f"Train {epoch_idx:>5}",
             )
         )
+
         for batch_idx, interaction in iter_data:
             interaction = dict2device(interaction, self.device)
             self.optimizer.zero_grad()
@@ -103,11 +104,14 @@ class Trainer(object):
                 loss = losses
                 total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
+            # import pdb
+            # pdb.set_trace()
             # loss.backward(retain_graph=True)
             loss.backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
             self.optimizer.step()
+            del interaction, losses
         return total_loss
 
     def _valid_epoch(self, valid_data, reverse=False):

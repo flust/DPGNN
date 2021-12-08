@@ -177,10 +177,8 @@ class BGPJF(PJFModel):
                             item_embeddings_c,
                             user_embeddings_c,
                             item_embeddings_p], dim=0)
-
-        if not self.ADD_BERT:
-            return id_e
-        else:
+                            
+        if self.ADD_BERT:
             self.bert_u = self.bert_lr(self.bert_user)
             self.bert_j = self.bert_lr(self.bert_job)
 
@@ -189,6 +187,9 @@ class BGPJF(PJFModel):
                                 self.bert_u, 
                                 self.bert_j], dim = 0)
             return torch.cat([id_e, bert_e], dim=1)
+
+        return id_e
+
 
     def forward(self):
         all_embeddings = self.get_ego_embeddings()

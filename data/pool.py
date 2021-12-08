@@ -15,8 +15,8 @@ class PJFPool(object):
     def __init__(self, config):
         self.logger = getLogger()
         self.config = config
-
         self._load_ids()
+        self._load_inter()
 
     def _load_ids(self):
         for target in ['geek', 'job']:
@@ -32,6 +32,18 @@ class PJFPool(object):
             setattr(self, f'{target}_token2id', token2id)
             setattr(self, f'{target}_id2token', id2token)
             setattr(self, f'{target}_num', len(id2token))
+
+    def _load_inter(self):
+        self.geek2jobs = DefaultDict(list)
+        self.job2geeks = DefaultDict(list)
+
+        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all_add'))
+        for l in tqdm(data_all):
+            gid, jid, label = l.split('\t')
+            gid = self.geek_token2id[gid]
+            jid = self.job_token2id[jid]
+            self.geek2jobs[gid].append(jid)
+            self.job2geeks[jid].append(gid)
 
     def __str__(self):
         return '\n\t'.join(['Pool:'] + [
@@ -51,25 +63,6 @@ class PopPool(PJFPool):
 class MFPool(PJFPool):
     def __init__(self, config):
         super(MFPool, self).__init__(config)
-        self._load_inter()
-
-    def _load_inter(self):
-        self.geek2jobs = DefaultDict(list)
-        self.job2geeks = DefaultDict(list)
-        self.geek2neg = DefaultDict(list)
-        self.job2neg = DefaultDict(list)
-
-        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all'))
-        for l in tqdm(data_all):
-            gid, jid, label = l.split('\t')
-            gid = self.geek_token2id[gid]
-            jid = self.job_token2id[jid]
-            if label[0] == '1':
-                self.geek2jobs[gid].append(jid)
-                self.job2geeks[jid].append(gid)
-            else:
-                self.geek2neg[gid].append(jid)
-                self.job2neg[jid].append(gid)
             
 
 class NCFPool(MFPool):
@@ -95,7 +88,6 @@ class LightGCNPool(MFPool):
                 self.geek_ids.append(geek_id)
                 self.job_ids.append(job_id)
                 self.labels.append(int(label))
-                # self.labels.append(1)
 
         self.geek_ids = torch.LongTensor(self.geek_ids)
         self.job_ids = torch.LongTensor(self.job_ids)
@@ -152,6 +144,38 @@ class MultiGCNsl1Pool(LightGCNaPool):
 class MultiGCNsl1l2Pool(LightGCNaPool):
     def __init__(self, config):
         super(MultiGCNsl1l2Pool, self).__init__(config)
+
+
+class MultiGCNBERTPool(LightGCNaPool):
+    def __init__(self, config):
+        super(MultiGCNBERTPool, self).__init__(config)
+        if(config['ADD_BERT']):
+            self._load_bert()
+    
+    def _load_bert(self):
+        u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
+        self.logger.info(f'Loading from {u_filepath}')
+        j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
+        # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+        self.logger.info(f'Loading from {j_filepath}')
+
+        u_array = np.load(u_filepath).astype(np.float64)
+        # add padding 
+        u_array = np.vstack([u_array, np.zeros((1, u_array.shape[1]))])
+
+        j_array = np.load(j_filepath).astype(np.float64)
+        # add padding
+        j_array = np.vstack([j_array, np.zeros((1, j_array.shape[1]))])
+
+        self.geek_token2bertid = {}
+        self.job_token2bertid = {}
+        for i in range(u_array.shape[0]):
+            self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
+        for i in range(j_array.shape[0]):
+            self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
+
+        self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
+        self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
 
 class MultiGNNPool(LightGCNaPool):
@@ -321,7 +345,6 @@ class BPJFNNPool(PJFPool):
 class PJFNNPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
-        # pdb.set_trace()
         self._load_word_cnt()
         self._load_sents()
 
@@ -331,6 +354,7 @@ class PJFNNPool(PJFPool):
             '[WD_PAD]': 0,
             '[WD_MISS]': 1
         }
+        # pdb.set_trace()
         self.id2wd = ['[WD_PAD]', '[WD_MISS]']
         filepath = os.path.join(self.config['dataset_path'], 'word.cnt')
         self.logger.info(f'Loading {filepath}')

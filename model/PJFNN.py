@@ -20,9 +20,9 @@ class TextCNN(nn.Module):
             nn.ReLU(),
             nn.AdaptiveMaxPool2d((1, dim))
         )
-        if method is 'max':
+        if method == 'max':
             self.pool = nn.AdaptiveMaxPool2d((1, dim))
-        elif method is 'mean':
+        elif method == 'mean':
             self.pool = nn.AdaptiveAvgPool2d((1, dim))
         else:
             raise ValueError('method {} not exist'.format(method))
@@ -41,6 +41,7 @@ class PJFNN(PJFModel):
         self.embedding_size = config['embedding_size']
         self.geek_channels = config['geek_max_sent_num'] #20
         self.job_channels = config['job_max_sent_num']   #20
+        self.config = config
 
         # define layers and loss
         self.emb = nn.Embedding(pool.wd_num, self.embedding_size, padding_idx=0)
@@ -68,21 +69,33 @@ class PJFNN(PJFModel):
         )
         self.loss = nn.BCEWithLogitsLoss()
 
-    def forward(self, interaction):
-        geek_sents = interaction['geek_sents']
-        job_sents = interaction['job_sents']
+    def forward(self, geek_sents, job_sents):
         geek_vec = self.emb(geek_sents)
         job_vec = self.emb(job_sents)
         geek_vec = self.geek_layer(geek_vec)
         job_vec = self.job_layer(job_vec)
         x = geek_vec * job_vec
         x = self.mlp(x).squeeze(1)
-        return x    
+        return x
 
     def calculate_loss(self, interaction):
         label = interaction['label']
-        output = self.forward(interaction)
-        return self.loss(output, label)
+        geek_sents = interaction['geek_sents']
+        job_sents = interaction['job_sents']
+        # neg_geek_sents = interaction['neg_geek_sents']
+        neg_job_sents = interaction['neg_job_sents']
+
+        output_pos = self.forward(geek_sents, job_sents)
+        output_neg_1 = self.forward(geek_sents, neg_job_sents)
+        # output_neg_2 = self.forward(neg_geek_sents, job_sents)
+        label_pos = interaction['label_pos'].to(self.config['device']).squeeze()
+        label_neg = interaction['label_neg'].to(self.config['device']).squeeze()
+        
+        return self.loss(output_pos, label_pos) \
+                + self.loss(output_neg_1, label_neg) \
+                # + self.loss(output_neg_2, label_neg)
 
     def predict(self, interaction):
-        return torch.sigmoid(self.forward(interaction))
+        geek_sents = interaction['geek_sents']
+        job_sents = interaction['job_sents']
+        return torch.sigmoid(self.forward(geek_sents, job_sents))

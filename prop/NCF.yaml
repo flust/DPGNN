@@ -1,7 +1,7 @@
 # Model
 # embedding_size: 64
-mf_embedding_size: 64
-mlp_embedding_size: 64
+mf_embedding_size: 128
+mlp_embedding_size: 128
 mlp_hidden_size: [64]
 
 ADD_BERT: False
@@ -11,7 +11,7 @@ BERT_output_size: 32
 dropout: 0.2
 
 # Training
-learning_rate: 0.0001
+learning_rate: 0.001
 
 # General
 train_batch_size: 4096

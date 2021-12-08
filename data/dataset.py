@@ -20,9 +20,9 @@ def create_datasets(config, pool):
         data_list.extend(['train_j', 'valid_j', 'test_j'])
     else:  
         # others: train on full data
-        data_list.extend(['train_all', 'valid_g', 'valid_j'])
+        # data_list.extend(['train_all', 'valid_g', 'valid_j'])
         
-        # data_list.extend(['train_all_add', 'valid_g', 'test_g'])
+        data_list.extend(['train_all_add', 'valid_g', 'test_g'])
 
         # test set for geek & test set for job
         data_list.extend(['test_g', 'test_j'])
@@ -126,19 +126,6 @@ class MFDataset(PJFDataset):
         while neg_geek in self.pool.job2geeks[job_id]:
             neg_geek = random.randint(1, self.geek_num - 1)
 
-        # 强负例负采样
-        # geek_id = self.geek_ids[index]
-        # if len(self.pool.geek2neg[geek_id]) == 0:
-        #     neg_job = random.randint(1, self.job_num - 1)
-        # else:
-        #     neg_job = random.randint(1, len(self.pool.geek2neg[geek_id]))
-        #     neg_job = self.pool.geek2neg[geek_id][neg_job]
-
-        # job_id = self.job_ids[index]
-        # neg_geek = random.randint(1, len(self.pool.job2neg[job_id]))
-        # neg_geek = self.pool.job2neg[job_id][neg_geek]
-        # print(neg_job)
-        
         return {
             'geek_id': self.geek_ids[index],
             'job_id': self.job_ids[index],
@@ -195,6 +182,11 @@ class MultiGCNsl1Dataset(MFDataset):
 class MultiGCNsl1l2Dataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(MultiGCNsl1l2Dataset, self).__init__(config, pool, phase)
+
+
+class MultiGCNBERTDataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(MultiGCNBERTDataset, self).__init__(config, pool, phase)
 
 
 class MultiGNNDataset(MFDataset):
@@ -263,6 +255,7 @@ class BPJFNNDataset(PJFDataset):
 class PJFNNDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super().__init__(config, pool, phase)
+        self.pool = pool
 
     def _init_attributes(self, pool):
         super()._init_attributes(pool)
@@ -273,11 +266,23 @@ class PJFNNDataset(PJFDataset):
         geek_id = self.geek_ids[index]
         geek_id_item = geek_id.item()
         job_id = self.job_ids[index].item()
+
+        neg_geek = random.randint(1, self.geek_num - 1)
+        neg_job = random.randint(1, self.job_num - 1)
+        while neg_job in self.pool.geek2jobs[geek_id]:
+            neg_job = random.randint(1, self.job_num - 1)
+        while neg_geek in self.pool.job2geeks[job_id]:
+            neg_geek = random.randint(1, self.geek_num - 1)
+
         return {
             'geek_id': geek_id,
             'job_id': job_id,
             'geek_sents': self.geek_sents[geek_id_item],
             'job_sents': self.job_sents[job_id],
+            'neg_geek_sents': self.geek_sents[neg_geek],
+            'neg_job_sents': self.job_sents[neg_job],
+            'label_pos': torch.Tensor([1]),
+            'label_neg': torch.Tensor([0]),
             'label': self.labels[index]
         }
 

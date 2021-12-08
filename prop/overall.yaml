@@ -19,7 +19,7 @@ pin_memory: True
 
 # General
 checkpoint_dir: ./saved/
-dataset_path: /home/yangchen/dataset/job/four_month_5_core/final_dir
+dataset_path: /home/yangchen/BGPJF/data/four_month_5_core/final_dir
 
 loss_decimal_place: 4
 metric_decimal_place: 4

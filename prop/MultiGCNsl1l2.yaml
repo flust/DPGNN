@@ -3,7 +3,7 @@ embedding_size: 128
 n_layers: 3
 reg_weight: 1e-05
 mutual_weight: 0.1
-temperature: 0.05
+temperature: 0.1
 # hidden_size: 8
 # dropout: 0.2
 

@@ -63,6 +63,8 @@ def main_process(model, config_dict=None, saved=True):
     train_data, valid_data_g, valid_data_j, test_data_g, test_data_j = construct_dataloader(config, datasets)
         
     # model loading and initialization
+    # import pdb
+    # pdb.set_trace()
     model = dynamic_load(config, 'model')(config, pool).to(config['device'])
     logger.info(model)
     wandb.watch(model, model.loss, log="all", log_freq=100)
@@ -70,8 +72,6 @@ def main_process(model, config_dict=None, saved=True):
     # trainer loading and initialization
     trainer = Trainer(config, model)
     
-    # import pdb
-    # pdb.set_trace()
     # model training
     best_valid_score, best_valid_result_g, best_valid_result_j = trainer.fit(train_data, valid_data_g, valid_data_j, saved=saved)
     

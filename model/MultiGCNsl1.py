@@ -171,7 +171,7 @@ class MultiGCNsl1(PJFModel):
         # neg_scores_u = n_I_geek_1 + n_I_job_1
         # neg_scores_i = n_I_geek_2 + n_I_job_2
 
-        mf_loss_u = self.mf_loss(r_pos + s_pos, r_neg1 + s_neg1 + r_neg2 + s_neg2)
+        mf_loss_u = self.mf_loss(2 * r_pos + 2 * s_pos, r_neg1 + s_neg1 + r_neg2 + s_neg2)
 
         # calculate Emb Loss
         u_ego_embeddings_a = self.user_embedding_a(user)
