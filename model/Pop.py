@@ -19,12 +19,12 @@ class Pop(PJFModel):
         self.loss = torch.nn.Parameter(torch.zeros(1))
 
     def calculate_loss(self, interaction):
-        item = interaction['geek_id']
+        item = interaction['job_id']
         self.item_cnt[item, :] += 1
         self.max_cnt.data = torch.max(self.item_cnt, dim=0)[0]
         return self.loss
 
     def predict(self, interaction):
-        item = interaction['geek_id']
+        item = interaction['job_id']
         result = self.item_cnt.to(torch.float64) / self.max_cnt.to(torch.float64)
         return result[item]

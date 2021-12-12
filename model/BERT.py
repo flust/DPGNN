@@ -24,7 +24,7 @@ class BERT(PJFModel):
         )
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
+        self.loss = nn.BCEWithLogitsLoss()
 
     def forward(self, interaction):
         bert_vec = interaction['bert_vec']

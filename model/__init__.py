@@ -21,4 +21,4 @@ from model.MultiPJF import MultiPJF
 from model.NCF import NCF
 # from model.JRMPM import JRMPM
 # from model.IPJF import IPJF
-from model.BGPJF import BGPJF
+# from model.BGPJF import BGPJF

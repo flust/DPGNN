@@ -14,12 +14,12 @@ import wandb
 params_range = dict()
 params_range['MF'] = {   
     'embedding_size': [128],
-    'learning_rate': [0.001, 0.0001, 0.00001],
+    'learning_rate': [0.01, 0.001, 0.0001, 0.00001],
 }
 
 params_range['NCF'] = {
-    'embedding_size': [64],  # NCF embedding_size 减半，因为 user/item 都有两个 embedding
-    'mlp_hidden_size': [[32], [32, 16], [32, 16, 8]],
+    'embedding_size': [128],  # NCF embedding_size 减半，因为 user/item 都有两个 embedding
+    'mlp_hidden_size': [[64], [64, 32], [64, 32, 16]],
     'learning_rate': [0.001, 0.0001],
 }
 
@@ -81,6 +81,18 @@ params_range['MultiGCNsl1l2'] = {
     'temperature': [0.1, 0.05],
     'n_layers': [3],
     'learning_rate': [0.001],
+}
+
+params_range['MultiGCNBERT'] = {
+    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'embedding_size': [128],
+    'mutual_weight': [0.01, 0.001],
+    'temperature': [0.2, 0.02],
+    'n_layers': [2, 3],
+    'learning_rate': [0.001],
+}
+
+params_range['PJFNN'] = {
 }
 
 params_range['MultiGNN'] = {

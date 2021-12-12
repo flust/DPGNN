@@ -59,10 +59,24 @@ class BPJFNN(PJFModel):
         x = self.mlp(x).squeeze(1)
         return x
 
+    def forward_neg(self, interaction):
+        geek_vec = self._single_bpj_layer(interaction, 'geek')
+        job_vec = self._single_bpj_layer(interaction, 'neg_job')
+
+        x = torch.cat([job_vec, geek_vec, job_vec - geek_vec], dim=1)
+        x = self.mlp(x).squeeze(1)
+        return x
+
     def calculate_loss(self, interaction):
         label = interaction['label']
-        output = self.forward(interaction)
-        return self.loss(output, label)
+        output_pos = self.forward(interaction)
+        output_neg_1 = self.forward_neg(interaction)
+        
+        label_pos = interaction['label_pos'].to(self.config['device']).squeeze()
+        label_neg = interaction['label_neg'].to(self.config['device']).squeeze()
+
+        return self.loss(output_pos, label_pos) \
+                + self.loss(output_neg_1, label_neg) \
 
     def predict(self, interaction):
         return self.sigmoid(self.forward(interaction))

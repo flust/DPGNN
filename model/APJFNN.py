@@ -144,10 +144,33 @@ class APJFNN(PJFModel):
         x = self.mlp(x).squeeze(1)
         return x
 
+    def forward_neg(self, interaction):
+        geek_sents = interaction['geek_sents']
+        job_sents = interaction['neg_job_sents']
+        geek_vecs, job_vecs = self.emb(geek_sents), self.emb(job_sents)
+        geek_vecs = torch.cat([self.geek_biLSTM(_)[0].unsqueeze(0) for _ in geek_vecs])
+        job_vecs = torch.cat([self.job_biLSTM(_)[0].unsqueeze(0) for _ in job_vecs])
+        
+        sj, gj = self.job_layer(job_vecs)
+        gr = self.geek_layer(geek_vecs, sj)
+
+        x = torch.cat([gj, gr, gj - gr], axis=1)
+        x = self.mlp(x).squeeze(1)
+        return x
+
     def calculate_loss(self, interaction):
+        # label = interaction['label']
+        # output = self.forward(interaction)
+        # return self.loss(output, label)
         label = interaction['label']
-        output = self.forward(interaction)
-        return self.loss(output, label)
-    
+        output_pos = self.forward(interaction)
+        output_neg_1 = self.forward_neg(interaction)
+        
+        label_pos = interaction['label_pos'].to(self.config['device']).squeeze()
+        label_neg = interaction['label_neg'].to(self.config['device']).squeeze()
+
+        return self.loss(output_pos, label_pos) \
+                + self.loss(output_neg_1, label_neg) \
+
     def predict(self, interaction):
         return torch.sigmoid(self.forward(interaction))

@@ -277,6 +277,8 @@ class PJFNNDataset(PJFDataset):
         return {
             'geek_id': geek_id,
             'job_id': job_id,
+            'neg_geek': neg_geek,
+            'neg_job': neg_job,
             'geek_sents': self.geek_sents[geek_id_item],
             'job_sents': self.job_sents[job_id],
             'neg_geek_sents': self.geek_sents[neg_geek],
