@@ -1,0 +1,19 @@
+# GCN part
+embedding_size: 256 # 开聊加入训练数据之后 256 跑不起来
+GCN_layers: 3
+
+# BERT part
+BERT_embedding_size: 768
+BERT_output_size: 32
+ADD_BIAS: True
+ADD_BERT: True
+ADD_STAR: True
+sample_n: 3
+
+# Training
+learning_rate: 0.01
+
+# General
+train_batch_size: 4096
+eval_batch_size: 4096
+

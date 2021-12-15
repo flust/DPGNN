@@ -86,20 +86,15 @@ params_range['MultiGCNsl1l2'] = {
 params_range['MultiGCNBERT'] = {
     # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
     'embedding_size': [128],
-    'mutual_weight': [0.01, 0.001],
-    'temperature': [0.2, 0.02],
-    'n_layers': [2, 3],
+    'mutual_weight': [0.05, 0.1],
+    'temperature': [0.2, 0.1],
+    'n_layers': [3],
     'learning_rate': [0.001],
 }
 
 params_range['PJFNN'] = {
 }
 
-params_range['MultiGNN'] = {
-    'embedding_size': [64],
-    'n_layers': [3],
-    'learning_rate': [0.001, 0.0001],
-}
 
 def get_arguments():
     args = dict()

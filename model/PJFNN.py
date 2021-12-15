@@ -82,18 +82,16 @@ class PJFNN(PJFModel):
         label = interaction['label']
         geek_sents = interaction['geek_sents']
         job_sents = interaction['job_sents']
-        # neg_geek_sents = interaction['neg_geek_sents']
         neg_job_sents = interaction['neg_job_sents']
 
         output_pos = self.forward(geek_sents, job_sents)
         output_neg_1 = self.forward(geek_sents, neg_job_sents)
-        # output_neg_2 = self.forward(neg_geek_sents, job_sents)
         label_pos = interaction['label_pos'].to(self.config['device']).squeeze()
         label_neg = interaction['label_neg'].to(self.config['device']).squeeze()
         
-        return self.loss(output_pos, label_pos) \
-                + self.loss(output_neg_1, label_neg) \
-                # + self.loss(output_neg_2, label_neg)
+        loss = self.loss(output_pos, label_pos)
+        loss += self.loss(output_neg_1, label_neg)
+        return loss
 
     def predict(self, interaction):
         geek_sents = interaction['geek_sents']

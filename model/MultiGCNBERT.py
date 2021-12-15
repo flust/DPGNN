@@ -58,8 +58,6 @@ class MultiGCNBERT(PJFModel):
         self.edge_weight = self.edge_weight.to(self.device)
 
         self.apply(self._init_weights)
-        # import pdb
-        # pdb.set_trace()
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):

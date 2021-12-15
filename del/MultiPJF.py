@@ -1,0 +1,292 @@
+import numpy as np
+import scipy.sparse as sp
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from torch.nn.init import xavier_normal_
+from model.abstract import PJFModel
+from model.layer import GCNConv
+from scipy.sparse import coo_matrix
+from model.layer import FusionLayer
+
+from operator import itemgetter
+import random
+
+class MultiPJF(PJFModel):
+    def __init__(self, config, pool):
+        super(MultiPJF, self).__init__(config, pool)
+        self.config = config
+
+        self.success_edge = pool.success_edge
+        self.user_add_edge = pool.user_add_edge
+        self.job_add_edge = pool.job_add_edge
+
+        self.n_users = pool.geek_num
+        self.n_items = pool.job_num
+        self.pool = pool
+        self.config = config
+        # load parameters info 
+        self.embedding_size = config['embedding_size']
+        self.GCN_e_size = self.embedding_size
+        self.BERT_e_size = config['BERT_output_size']
+        # self.GCN_e_size = config['GCN_embedding_size']  # int type:the embedding size of lightGCN
+        self.GCN_n_layers = config['GCN_layers']  # int type:the layer num of lightGCN
+
+        self.ADD_BIAS = config['ADD_BIAS']
+        self.ADD_BERT = config['ADD_BERT']
+        self.ADD_STAR = config['ADD_STAR']
+
+        # create edges
+        self.edge_index = self.create_edge().to(config['device'])
+
+        # layers
+        self.user_embedding_c = nn.Embedding(self.n_users, self.GCN_e_size)
+        self.item_embedding_c = nn.Embedding(self.n_items, self.GCN_e_size)
+        self.user_embedding_p = nn.Embedding(self.n_users, self.GCN_e_size)
+        self.item_embedding_p = nn.Embedding(self.n_items, self.GCN_e_size)
+
+        # gcn layers
+        gcn_modules = []
+        for i in range(self.GCN_n_layers):
+            gcn_modules.append(GCNConv(self.GCN_e_size, self.GCN_e_size))
+        self.gcn_layers = nn.Sequential(*gcn_modules)
+        # star_in_features = 2 * self.GCN_e_size
+        self.final_in_features = 6 * self.GCN_e_size
+
+        # bert part
+        if self.ADD_BERT:
+            self.bert_lr = nn.Linear(config['BERT_embedding_size'],
+                        self.BERT_e_size).to(self.config['device'])
+            self._load_bert()
+            # star_in_features = 2 * (self.GCN_e_size + self.BERT_e_size)
+            self.final_in_features = 6 * (self.GCN_e_size + self.BERT_e_size)
+
+        # star part
+        if self.ADD_STAR:
+            # self.job_lr = nn.Linear(star_in_features, 1)
+            # self.geek_lr = nn.Linear(star_in_features, 1)
+            # self.final_lr = nn.Linear(self.final_in_features, 1)
+            self.hd_size = 64
+            self.dropout = 0.1
+            self.mlp = nn.Sequential(
+                nn.Linear(self.final_in_features, self.hd_size),
+                nn.BatchNorm1d(num_features=self.hd_size),
+                nn.Sigmoid(),
+                nn.Dropout(p=self.dropout),
+                nn.Linear(self.hd_size, 1)
+            )
+            self.job_c_attn = nn.Linear(int(self.final_in_features / 6), 1)
+            self.job_p_attn = nn.Linear(int(self.final_in_features / 6), 1)
+            self.geek_c_attn = nn.Linear(int(self.final_in_features / 6), 1)
+            self.geek_p_attn = nn.Linear(int(self.final_in_features / 6), 1)
+
+        # bias
+        self.geek_b = nn.Embedding(self.geek_num, 1)
+        self.job_b = nn.Embedding(self.job_num, 1)
+        self.miu = nn.Parameter(torch.rand(1, ), requires_grad=True)
+
+        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([config['pos_weight']]))
+        self.apply(self._init_weights)
+
+    def get_edge(self, edges, u_p=True, j_p=True):
+        geek_id_p = edges[0].unsqueeze(0)
+        job_id_c = edges[1].unsqueeze(0) + self.n_users
+        geek_id_c = edges[0].unsqueeze(0) + self.n_users + self.n_items
+        job_id_p = edges[1].unsqueeze(0) + self.n_users + self.n_items + self.n_users
+        
+        u_p_edge = torch.cat((geek_id_p, job_id_c), 0)
+        j_p_edge = torch.cat((job_id_p, geek_id_c), 0)
+        if u_p and j_p:
+            return torch.cat((u_p_edge, j_p_edge), 1)
+        elif u_p:
+            return u_p_edge
+        elif j_p:
+            return j_p_edge
+        else:
+            raise ValueError("At least one of u_p and j_p must be true")
+
+    def get_self_edge(self):
+        # geek_p <-> geek_c
+        geek_begin = torch.arange(0, self.n_users).unsqueeze(0).long()
+        geek_end = geek_begin + self.n_users + self.n_items
+        geek_edge = torch.cat((geek_begin, geek_end), 0)
+
+        # job_p <-> job_c
+        job_begin = torch.arange(self.n_users, self.n_users + self.n_items).unsqueeze(0).long()
+        job_end = job_begin + self.n_users + self.n_items
+        job_edge = torch.cat((job_begin, job_end), 0)
+        return torch.cat((geek_edge, job_edge), 1)
+
+    def create_edge(self):
+        # create edges
+        # node id: In the following order
+        #   user p node: [0 ~~~ n_users] (len: n_users)
+        #   item c node: [n_users + 1 ~~~ n_users + 1 + n_items] (len: n_users)
+        #   user c node: [~] (len: n_users)
+        #   item p node: [~] (len: n_items)
+
+        # In geek success data, geek_p <-> job_c  &&  geek_c <-> job_p
+        # user_success_edge = self.get_edge(self.dataset['train_g'], u_p=True, j_p=True)
+
+        # In job success data, geek_c <-> job_p  &&  geek_p <-> job_c
+        # job_success_edge = self.get_edge(self.dataset['train_j'], u_p=True, j_p=True)
+
+        # success edge, geek_c <-> job_p  &&  geek_p <-> job_c
+        success_edge = self.get_edge(self.success_edge, u_p=True, j_p=True)
+
+        # In geek addfriend data, geek_p <-> job_c
+        user_addfriend_edge = self.get_edge(self.user_add_edge, u_p=True, j_p=False)
+
+        # In job addfriend data, geek_c <-> job_p
+        job_addfriend_edge = self.get_edge(self.job_add_edge, u_p=False, j_p=True)
+                               
+        # geek_p <-> geek_c  &&  job_p <-> job_c
+        # self_edge = self.get_self_edge()
+
+        # combine all edges
+        # edges = torch.cat((user_success_edge, 
+        #                     job_success_edge, 
+        #                     user_addfriend_edge,
+        #                     job_addfriend_edge,
+        #                     self_edge), 1)
+        edges = torch.cat((success_edge,
+                            user_addfriend_edge,
+                            job_addfriend_edge), 1)
+        # make edges bidirected
+        # edges = torch.cat((edges, edges[[1,0]]), 1)
+        return edges
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
+
+    def _load_bert(self):
+        self.bert_user = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_users):
+            geek_token = self.pool.geek_id2token[i]
+            bert_id =  self.pool.geek_token2bertid[geek_token]
+            bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
+            self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
+
+        self.bert_job = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_items):
+            job_token = self.pool.job_id2token[i]
+            bert_id =  self.pool.job_token2bertid[job_token]
+            bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
+            self.bert_job = torch.cat([self.bert_job, bert_j_vec], dim=0)
+
+    def get_ego_embeddings(self):
+        r"""Get the embedding of users and items and combine to an embedding matrix.
+
+        Returns:
+            Tensor of the embedding matrix. Shape of [n_items+n_users, embedding_dim]
+        """
+        user_embeddings_c = self.user_embedding_c.weight
+        item_embeddings_c = self.item_embedding_c.weight
+        user_embeddings_p = self.user_embedding_p.weight
+        item_embeddings_p = self.item_embedding_p.weight
+        id_e = torch.cat([user_embeddings_p,
+                            item_embeddings_c,
+                            user_embeddings_c,
+                            item_embeddings_p], dim=0)
+        if not self.ADD_BERT:
+            return id_e
+        else:
+            self.bert_u = self.bert_lr(self.bert_user)
+            self.bert_j = self.bert_lr(self.bert_job)
+
+            bert_e = torch.cat([self.bert_u,
+                                self.bert_j, 
+                                self.bert_u, 
+                                self.bert_j], dim = 0)
+            return torch.cat([id_e, bert_e], dim=1)
+
+    def forward(self):
+        all_embeddings = self.get_ego_embeddings()
+        embeddings_list = [all_embeddings]
+        for i in range(self.GCN_n_layers):
+            all_embeddings = self.gcn_layers[i](all_embeddings, self.edge_index)
+            embeddings_list.append(all_embeddings)
+
+        lightgcn_all_embeddings = torch.stack(embeddings_list, dim=1)
+        lightgcn_all_embeddings = torch.mean(lightgcn_all_embeddings, dim=1)
+
+        user_e_p, item_e_c, user_e_c, item_e_p = torch.split(lightgcn_all_embeddings, 
+                    [self.n_users, self.n_items, self.n_users, self.n_items])
+        return user_e_p, item_e_c, user_e_c, item_e_p
+
+    def get_star(self, ids, e_c, e_p, direction):
+        ids = ids.tolist()
+        ids = [n for a in ids for n in a]  # 把 key 取出来
+
+        p_star_origin = e_p[ids].detach()
+        p_star_origin = p_star_origin.reshape(-1, self.pool.sample_n, e_p.shape[1]) # [4096, 3, embedding_size]
+        p_star_attn_weight = self.geek_p_attn(p_star_origin) if direction else self.job_p_attn(p_star_origin)
+        p_star_attn_weight = torch.softmax(p_star_attn_weight, dim=1)
+        p_star = torch.sum(p_star_origin * p_star_attn_weight, dim=1)
+
+        c_star_origin = e_c[ids].detach()
+        c_star_origin = c_star_origin.reshape(-1, self.pool.sample_n, e_c.shape[1])
+        c_star_attn_weight = self.geek_c_attn(c_star_origin) if direction else self.job_c_attn(c_star_origin)
+        c_star_attn_weight = torch.softmax(c_star_attn_weight, dim=1)
+        c_star = torch.sum(c_star_origin * c_star_attn_weight, dim=1)
+        
+        return p_star, c_star
+
+    def calculate_score(self, interaction):
+        r"""calculate score for user and item
+
+        Returns:
+            torch.mul(user_embedding, item_embedding)
+        """
+        user = interaction['geek_id']   # shape 4096
+        item = interaction['job_id']
+        user_e_p, item_e_c, user_e_c, item_e_p = self.forward()
+
+        u_e_c = user_e_c[user]
+        i_e_c = item_e_c[item]
+        u_e_p = user_e_p[user]
+        i_e_p = item_e_p[item]
+
+        if not self.ADD_STAR:
+            scores = torch.mul(u_e_p, i_e_c).sum(dim=1) \
+                + torch.mul(u_e_c, i_e_p).sum(dim=1)
+        else:
+            I_geek = torch.mul(u_e_p, i_e_c)
+            I_job = torch.mul(u_e_c, i_e_p)
+
+            job_p_star, job_c_star = self.get_star(interaction['geek2jobs'],
+                                            item_e_c, item_e_p, 0)
+            geek_p_star, geek_c_star = self.get_star(interaction['job2geeks'],
+                                            user_e_c, user_e_p, 1)
+            
+            score = self.mlp(torch.cat([job_p_star,
+                                                job_c_star,
+                                                geek_p_star,
+                                                geek_c_star,
+                                                I_geek,
+                                                I_job], dim=1)) # mlp \
+            scores = score.squeeze()
+
+        if self.ADD_BIAS:
+            scores += self.geek_b(user).squeeze() \
+                + self.job_b(item).squeeze() \
+                + self.miu
+        return scores.squeeze()
+
+    def predict(self, interaction):
+        scores = self.calculate_score(interaction)
+        # return self.sigmoid(scores)
+        return scores
+
+    def calculate_loss(self, interaction):
+        # calculate BPR Loss
+        scores = self.calculate_score(interaction)
+        label = interaction['label']
+        # scores = self.sigmoid(scores)
+        # import pdb
+        # pdb.set_trace()
+        return self.loss(scores, label)
+

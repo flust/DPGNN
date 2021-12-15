@@ -4,7 +4,7 @@ geek_longsent_len: 256
 job_longsent_len: 256
 
 # Model
-embedding_size: 100
+embedding_size: 128
 hidden_size: 32
 dropout: 0.2
 num_layers: 1

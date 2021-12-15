@@ -4,7 +4,7 @@ hidden_size: 128
 dropout: 0.2
 
 # Training
-learning_rate: 0.001
+learning_rate: 0.00001
 
 # General
 train_batch_size: 2048
