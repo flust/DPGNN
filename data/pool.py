@@ -146,9 +146,9 @@ class MultiGCNsl1l2Pool(LightGCNaPool):
         super(MultiGCNsl1l2Pool, self).__init__(config)
 
 
-class MultiGCNBERTPool(LightGCNaPool):
+class BGPJFPool(LightGCNaPool):
     def __init__(self, config):
-        super(MultiGCNBERTPool, self).__init__(config)
+        super(BGPJFPool, self).__init__(config)
         if(config['ADD_BERT']):
             self._load_bert()
     
@@ -178,29 +178,9 @@ class MultiGCNBERTPool(LightGCNaPool):
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
 
-class LightGCNaBERTPool(MultiGCNBERTPool):
+class LightGCNaBERTPool(BGPJFPool):
     def __init__(self, config):
         super(LightGCNaBERTPool, self).__init__(config)
-
-
-class SingleBERTPool(PJFPool):
-    def __init__(self, config):
-        super(SingleBERTPool, self).__init__(config)
-        self._load_bert_vec()
-
-    def _load_bert_vec(self):
-        for target in ['geek', 'job']:
-            filepath = os.path.join(self.config['dataset_path'], f'{target}.bert.npy')
-            self.logger.info(f'Loading {filepath}')
-            bert_vec = np.load(filepath).astype(np.float32)
-            setattr(self, f'{target}_bert_vec', bert_vec)
-
-    def __str__(self):
-        return '\n\t'.join([
-            super(SingleBERTPool, self).__str__(),
-            f'geek_bert_vec: {self.geek_bert_vec.shape}',
-            f'job_bert_vec: {self.job_bert_vec.shape}'
-        ])
 
 
 class BPJFNNPool(PJFPool):
@@ -265,6 +245,7 @@ class BPJFNNPool(PJFPool):
             f'job_id2longsent: {self.job_id2longsent.shape}'
         ])
 
+
 class PJFNNPool(PJFPool):
     def __init__(self, config):
         super().__init__(config)
@@ -277,7 +258,6 @@ class PJFNNPool(PJFPool):
             '[WD_PAD]': 0,
             '[WD_MISS]': 1
         }
-        # pdb.set_trace()
         self.id2wd = ['[WD_PAD]', '[WD_MISS]']
         filepath = os.path.join(self.config['dataset_path'], 'word.cnt')
         self.logger.info(f'Loading {filepath}')
@@ -336,6 +316,11 @@ class PJFNNPool(PJFPool):
             setattr(self, f'{target}_sent_num', sent_num)
 
 
+class APJFNNPool(PJFNNPool):
+    def __init__(self, config):
+        super(APJFNNPool, self).__init__(config)
+
+
 class BERTPool(PJFPool):
     def __init__(self, config):
         super(BERTPool, self).__init__(config)
@@ -373,7 +358,3 @@ class IPJFPool(PJFNNPool):
     def __init__(self, config):
         super(IPJFPool, self).__init__(config)
 
-
-class APJFNNPool(PJFNNPool):
-    def __init__(self, config):
-        super(APJFNNPool, self).__init__(config)

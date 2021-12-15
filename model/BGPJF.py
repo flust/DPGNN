@@ -12,9 +12,9 @@ from torch_geometric.utils import degree
 import pdb
 
 
-class MultiGCNBERT(PJFModel):
+class BGPJF(PJFModel):
     def __init__(self, config, pool):
-        super(MultiGCNBERT, self).__init__(config, pool)
+        super(BGPJF, self).__init__(config, pool)
         self.config = config
         self.pool = pool
         

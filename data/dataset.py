@@ -190,9 +190,9 @@ class MultiGCNsl1l2Dataset(MFDataset):
         super(MultiGCNsl1l2Dataset, self).__init__(config, pool, phase)
 
 
-class MultiGCNBERTDataset(MFDataset):
+class BGPJFDataset(MFDataset):
     def __init__(self, config, pool, phase):
-        super(MultiGCNBERTDataset, self).__init__(config, pool, phase)
+        super(BGPJFDataset, self).__init__(config, pool, phase)
 
 
 class MultiGNNDataset(MFDataset):
