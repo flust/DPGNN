@@ -18,4 +18,4 @@ from model.MultiGCNsl1l2 import MultiGCNsl1l2
 from model.BGPJF import BGPJF
 
 # from model.JRMPM import JRMPM
-# from model.IPJF import IPJF
+from model.IPJF import IPJF

@@ -12,7 +12,7 @@ class HingeLoss(torch.nn.Module):
         self.delta = 0.05
 
     def forward(self, pos_score, neg_score):
-        hinge_loss = torch.max(0, pos_score - neg_score + self.delta)
+        hinge_loss = torch.clamp(pos_score - neg_score + self.delta, min=0).mean()
         return hinge_loss
 
 # temporal narrow convolution
@@ -100,17 +100,41 @@ class IPJF(PJFModel):
             nn.Dropout(p=0.2),
             nn.Linear(2 * self.embedding_size, 1)
         )
+
+        self.BERT_e_size = config['BERT_output_size']
+        self.bert_lr = nn.Linear(config['BERT_embedding_size'],
+                                self.BERT_e_size).to(self.config['device'])
+        self._load_bert()
+        
         self.sigmoid = nn.Sigmoid()
         self.loss = HingeLoss()
         self.apply(self._init_weights)
 
-    def forward(self, geek_sents, job_sents):
+    def _load_bert(self):
+        self.bert_user = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_users):
+            geek_token = self.pool.geek_id2token[i]
+            bert_id =  self.pool.geek_token2bertid[geek_token]
+            bert_u_vec = self.pool.u_bert_vec[bert_id, :].unsqueeze(0).to(self.config['device'])
+            self.bert_user = torch.cat([self.bert_user, bert_u_vec], dim=0)
+            del bert_u_vec
 
-        geek_vec = self.emb(geek_sents)
-        job_vec = self.emb(job_sents)
+        self.bert_job = torch.FloatTensor([]).to(self.config['device'])
+        for i in range(self.n_items):
+            job_token = self.pool.job_id2token[i]
+            bert_id =  self.pool.job_token2bertid[job_token]
+            bert_j_vec = self.pool.j_bert_vec[bert_id].unsqueeze(0).to(self.config['device'])
+            self.bert_job = torch.cat([self.bert_job, bert_j_vec], dim=0)
+            del bert_j_vec
+
+    def forward(self, geek_id, job_id):
+        # import pdb
+        # pdb.set_trace()
+        # geek_vec = self.emb(geek_sents)
+        # job_vec = self.emb(job_sents)
         
-        geek_vec = self.geek_layer(geek_vec) # [2048, 64]
-        job_vec = self.job_layer(job_vec)  # [2048, 64]
+        # geek_vec = self.geek_layer(geek_vec) # [2048, 64]
+        # job_vec = self.job_layer(job_vec)  # [2048, 64]
 
         f_s = self.geek_fusion_layer(geek_vec, job_vec)
         f_e = self.job_fusion_layer(geek_vec, job_vec)
@@ -204,10 +228,10 @@ class IPJF(PJFModel):
     def calculate_loss(self, interaction):
         geek_sents = interaction['geek_sents']
         job_sents = interaction['job_sents']
-        neu_job = 0# 中性岗位
-        neg_job = 0# 负岗位
-        neu_geek = 0# 中性用户
-        neg_geek = 0# 负用户
+        neu_job = interaction['neu_job_sents'] # 中性岗位
+        neg_job = interaction['neg_job_sents'] # 负岗位
+        neu_geek = interaction['neu_geek_sents'] # 中性用户
+        neg_geek = interaction['neg_geek_sents'] # 负用户
 
         loss_s_i, loss_s_m = self.calculate_geek_loss(geek_sents, job_sents, neu_job, neg_job)
         loss_e_i, loss_e_m = self.calculate_geek_loss(geek_sents, job_sents, neu_geek, neg_geek)
@@ -216,5 +240,7 @@ class IPJF(PJFModel):
         return loss
 
     def predict(self, interaction):
-        
-        return torch.sigmoid(self.forward(interaction))
+        geek_sents = interaction['geek_sents']
+        job_sents = interaction['job_sents']
+        _, _, match_score = self.forward(geek_sents, job_sents)
+        return torch.sigmoid(match_score)

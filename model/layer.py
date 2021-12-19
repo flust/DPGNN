@@ -155,6 +155,16 @@ class BiBPRLoss(nn.Module):
         return loss
 
 
+class HingeLoss(torch.nn.Module):
+    def __init__(self):
+        super(HingeLoss, self).__init__()
+        self.delta = 0.05
+
+    def forward(self, pos_score, neg_score):
+        hinge_loss = torch.clamp(neg_score - pos_score+ self.delta, min=0).mean()
+        return hinge_loss
+
+
 class EmbLoss(nn.Module):
     """ EmbLoss, regularization on embeddings
     """

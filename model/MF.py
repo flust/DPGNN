@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
 from model.abstract import PJFModel
-from model.layer import BPRLoss
+from model.layer import BPRLoss, HingeLoss
 
 class MF(PJFModel):
     def __init__(self, config, pool):

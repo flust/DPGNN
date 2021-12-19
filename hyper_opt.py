@@ -95,6 +95,11 @@ params_range['MultiGCNBERT'] = {
 params_range['PJFNN'] = {
 }
 
+params_range['IPJF'] = {
+    'embedding_size': [128],
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
+
 
 def get_arguments():
     args = dict()

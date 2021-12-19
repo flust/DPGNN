@@ -186,6 +186,8 @@ class LightGCNaBERTPool(BGPJFPool):
 class BPJFNNPool(PJFPool):
     def __init__(self, config):
         super(BPJFNNPool, self).__init__(config)
+        import pdb
+        pdb.set_trace()
         self._load_word_cnt()
         self._load_longsent()
 
@@ -218,8 +220,6 @@ class BPJFNNPool(PJFPool):
             err = 0
             with open(filepath, 'r', encoding='utf-8') as file:
                 for line in tqdm(file):
-                    # import pdb
-                    # pdb.set_trace()
                     try:
                         token, longsent = line.strip().split('\t')
                     except:
@@ -306,11 +306,12 @@ class PJFNNPool(PJFPool):
                     sent_num[idx] += 1    # sent_num[idx] 第idx个用户的句子个数
                     sent_num_sum += 1
 
-            # pdb.set_trace()
             avg_sent_num = sent_num_sum / user_num_count   # 1.8  /  11.9
             avg_sent_len = sent_len_sum / sent_num_sum   # 13.1  /  12.4
             # sales user 1.8 * 13.1
             # sales job 11.9 * 12.4
+            # tech user 2.7 * 14.1
+            # tech job 10.5 * 11.8
 
             setattr(self, f'{target}_sents', sents)
             setattr(self, f'{target}_sent_num', sent_num)
@@ -327,8 +328,6 @@ class BERTPool(PJFPool):
         self._load_bert()
     
     def _load_bert(self):
-        # import pdb
-        # pdb.set_trace()
         u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
         self.logger.info(f'Loading from {u_filepath}')
         j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
@@ -353,8 +352,52 @@ class BERTPool(PJFPool):
         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
-  
+
 class IPJFPool(PJFNNPool):
     def __init__(self, config):
         super(IPJFPool, self).__init__(config)
+        self._load_bert()
 
+    def _load_inter(self):
+        self.geek2jobs = DefaultDict(list)
+        self.geek2jobs_addfriend = DefaultDict(list)
+        
+        self.job2geeks = DefaultDict(list)
+        self.job2geeks_addfriend = DefaultDict(list)
+        data_all = open(os.path.join(self.config['dataset_path'], f'data.train_all_add'))
+        for l in tqdm(data_all):
+            gid, jid, label = l.split('\t')
+            gid = self.geek_token2id[gid]
+            jid = self.job_token2id[jid]
+            if label == '1\n':
+                self.geek2jobs[gid].append(jid)
+                self.job2geeks[jid].append(gid)
+            elif label == '2\n':
+                self.geek2jobs_addfriend[gid].append(jid)
+            else:
+                self.job2geeks_addfriend[jid].append(gid)
+
+    def _load_bert(self):
+        u_filepath = os.path.join(self.config['dataset_path'], 'geek.bert.npy')
+        self.logger.info(f'Loading from {u_filepath}')
+        j_filepath = os.path.join(self.config['dataset_path'], 'job.bert.npy')
+        # bert_filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}.bert.npy')
+        self.logger.info(f'Loading from {j_filepath}')
+
+        u_array = np.load(u_filepath).astype(np.float64)
+        # add padding 
+        u_array = np.vstack([u_array, np.zeros((1, u_array.shape[1]))])
+
+        j_array = np.load(j_filepath).astype(np.float64)
+        # add padding
+        j_array = np.vstack([j_array, np.zeros((1, j_array.shape[1]))])
+
+        self.geek_token2bertid = {}
+        self.job_token2bertid = {}
+        for i in range(u_array.shape[0]):
+            self.geek_token2bertid[str(u_array[i, 0].astype(int))] = i
+        for i in range(j_array.shape[0]):
+            self.job_token2bertid[str(j_array[i, 0].astype(int))] = i
+
+        self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
+        self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])

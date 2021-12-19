@@ -248,12 +248,13 @@ class PJFNNDataset(PJFDataset):
 
     def _init_attributes(self, pool):
         super()._init_attributes(pool)
+        # import pdb
+        # pdb.set_trace()
         self.geek_sents = pool.geek_sents
         self.job_sents = pool.job_sents
 
     def __getitem__(self, index):
-        geek_id = self.geek_ids[index]
-        geek_id_item = geek_id.item()
+        geek_id = self.geek_ids[index].item()
         job_id = self.job_ids[index].item()
 
         neg_geek = random.randint(1, self.geek_num - 1)
@@ -268,7 +269,7 @@ class PJFNNDataset(PJFDataset):
             'job_id': job_id,
             'neg_geek': neg_geek,
             'neg_job': neg_job,
-            'geek_sents': self.geek_sents[geek_id_item],
+            'geek_sents': self.geek_sents[geek_id],
             'job_sents': self.job_sents[job_id],
             'neg_geek_sents': self.geek_sents[neg_geek],
             'neg_job_sents': self.job_sents[neg_job],
@@ -278,9 +279,68 @@ class PJFNNDataset(PJFDataset):
         }
 
 
-class IPJFDataset(PJFNNDataset):
+class IPJFDataset(PJFDataset):
     def __init__(self, config, pool, phase):
         super(IPJFDataset, self).__init__(config, pool, phase)
+        self.pool = pool
+        if phase == 'train_all_add':
+            self.phase = 'train_all'
+    
+    def _load_inters(self):
+        filepath = os.path.join(self.config['dataset_path'], f'data.{self.phase}')
+        self.logger.info(f'Loading from {filepath}')
+
+        self.geek_ids, self.job_ids, self.labels = [], [], []
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in tqdm(file):
+                # geek_token, job_token, ts, label = line.strip().split('\t')
+                geek_token, job_token, label = line.strip().split('\t')[:3]
+                geek_id = self.geek_token2id[geek_token]
+                self.geek_ids.append(geek_id)
+                job_id = self.job_token2id[job_token]
+                self.job_ids.append(job_id)
+                self.labels.append(int(label))
+        self.geek_ids = torch.LongTensor(self.geek_ids)
+        self.job_ids = torch.LongTensor(self.job_ids)
+        self.labels = torch.FloatTensor(self.labels)
+
+    def __getitem__(self, index):
+        geek_id = self.geek_ids[index].item()
+        job_id = self.job_ids[index].item()
+
+        # sample neutral geek 
+        if len(self.pool.job2geeks_addfriend[job_id]) == 0:
+            neu_geek = random.randint(1, self.geek_num - 1)
+            while neu_geek in self.pool.job2geeks[job_id]:
+                neu_geek = random.randint(1, self.geek_num - 1)
+        else:
+            neu_geek = random.sample(self.pool.job2geeks_addfriend[job_id], 1)[0]
+        
+        # sample neutral job
+        if len(self.pool.geek2jobs_addfriend[geek_id]) == 0:
+            neu_job = random.randint(1, self.job_num - 1)
+            while neu_job in self.pool.geek2jobs[geek_id]:
+                neu_job = random.randint(1, self.job_num - 1)
+        else:
+            neu_job = random.sample(self.pool.geek2jobs_addfriend[geek_id], 1)[0]
+
+        # sample neg geek / neg job
+        neg_geek = random.randint(1, self.geek_num - 1)
+        neg_job = random.randint(1, self.job_num - 1)
+        while neg_job in self.pool.geek2jobs[geek_id] or neg_job in self.pool.geek2jobs_addfriend[geek_id]:
+            neg_job = random.randint(1, self.job_num - 1)
+        while neg_geek in self.pool.job2geeks[job_id] or neg_geek in self.pool.job2geeks_addfriend[job_id]:
+            neg_geek = random.randint(1, self.geek_num - 1)
+
+        return {
+            'geek_id': geek_id,
+            'job_id': job_id,
+            'neu_job_id': neu_job,
+            'neg_job_id': neg_job,
+            'neu_geek_id': neu_geek,
+            'neg_geek_id': neg_geek,
+            'label': self.labels[index]
+        }
 
 
 class APJFNNDataset(PJFNNDataset):
