@@ -83,13 +83,13 @@ params_range['MultiGCNsl1l2'] = {
     'learning_rate': [0.001],
 }
 
-params_range['MultiGCNBERT'] = {
+params_range['BGPJF'] = {
     # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
     'embedding_size': [128],
-    'mutual_weight': [0.05, 0.1],
-    'temperature': [0.2, 0.1],
+    'mutual_weight': [0.05],
+    'temperature': [0.3, 0.2, 0.1],
     'n_layers': [3],
-    'learning_rate': [0.001],
+    'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
 params_range['PJFNN'] = {

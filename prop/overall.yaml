@@ -1,6 +1,6 @@
 # Device
 use_gpu: True
-gpu_id: 1
+gpu_id: 0
 
 # Training
 learner: Adam
@@ -19,8 +19,9 @@ pin_memory: True
 
 # General
 checkpoint_dir: ./saved/
-dataset_path: /home/yangchen/BGPJF/data/four_month_5_core/final_dir
-# dataset_path: /home/yangchen/BGPJF/data/sales/final_dir
+# dataset_path: /home/yangchen/BGPJF/data/four_month_5_core/final_dir
+dataset_path: /home/yangchen/BGPJF/data/sales/final_dir
+# dataset_path: /home/yangchen/BGPJF/data/designs/final_dir
 
 loss_decimal_place: 4
 metric_decimal_place: 4

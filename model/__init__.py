@@ -16,6 +16,12 @@ from model.MultiGCNsl import MultiGCNsl
 from model.MultiGCNsl1 import MultiGCNsl1
 from model.MultiGCNsl1l2 import MultiGCNsl1l2
 from model.BGPJF import BGPJF
+from model.woBG import woBG
+from model.woBL import woBL
+from model.woML import woML
+from model.woBERT import woBERT
+
+
 
 # from model.JRMPM import JRMPM
 from model.IPJF import IPJF

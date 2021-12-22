@@ -4,7 +4,6 @@ from torch.nn.init import xavier_normal_
 
 from model.abstract import PJFModel
 
-
 class TextCNN(nn.Module):
     def __init__(self, channels, kernel_size, pool_size, dim, method='max'):
         super(TextCNN, self).__init__()
@@ -76,6 +75,8 @@ class PJFNN(PJFModel):
         job_vec = self.job_layer(job_vec)
         x = geek_vec * job_vec
         x = self.mlp(x).squeeze(1)
+        # import pdb
+        # pdb.set_trace()
         return x
 
     def calculate_loss(self, interaction):
@@ -88,7 +89,7 @@ class PJFNN(PJFModel):
         output_neg_1 = self.forward(geek_sents, neg_job_sents)
         label_pos = interaction['label_pos'].to(self.config['device']).squeeze()
         label_neg = interaction['label_neg'].to(self.config['device']).squeeze()
-        
+
         loss = self.loss(output_pos, label_pos)
         loss += self.loss(output_neg_1, label_neg)
         return loss
@@ -96,4 +97,6 @@ class PJFNN(PJFModel):
     def predict(self, interaction):
         geek_sents = interaction['geek_sents']
         job_sents = interaction['job_sents']
+        # import pdb
+        # pdb.set_trace()
         return torch.sigmoid(self.forward(geek_sents, job_sents))

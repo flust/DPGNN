@@ -401,3 +401,23 @@ class IPJFPool(PJFNNPool):
 
         self.u_bert_vec = torch.FloatTensor(u_array[:, 1:])
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
+
+
+
+
+
+class woBGPool(BGPJFPool):
+    def __init__(self, config):
+        super(woBGPool, self).__init__(config)
+
+class woBLPool(BGPJFPool):
+    def __init__(self, config):
+        super(woBLPool, self).__init__(config)
+
+class woMLPool(BGPJFPool):
+    def __init__(self, config):
+        super(woMLPool, self).__init__(config)
+
+class woBERTPool(BGPJFPool):
+    def __init__(self, config):
+        super(woBERTPool, self).__init__(config)

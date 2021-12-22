@@ -352,3 +352,22 @@ class BERTDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(BERTDataset, self).__init__(config, pool, phase)
 
+
+
+
+
+class woBGDataset(BGPJFDataset):
+    def __init__(self, config, pool, phase):
+        super(woBGDataset, self).__init__(config, pool, phase)
+
+class woBLDataset(BGPJFDataset):
+    def __init__(self, config, pool, phase):
+        super(woBLDataset, self).__init__(config, pool, phase)
+
+class woMLDataset(BGPJFDataset):
+    def __init__(self, config, pool, phase):
+        super(woMLDataset, self).__init__(config, pool, phase)
+
+class woBERTDataset(BGPJFDataset):
+    def __init__(self, config, pool, phase):
+        super(woBERTDataset, self).__init__(config, pool, phase)
