@@ -186,8 +186,8 @@ class LightGCNaBERTPool(BGPJFPool):
 class BPJFNNPool(PJFPool):
     def __init__(self, config):
         super(BPJFNNPool, self).__init__(config)
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         self._load_word_cnt()
         self._load_longsent()
 
