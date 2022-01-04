@@ -14,5 +14,5 @@ LSTM_hidden_dim: 64
 learning_rate: 0.0003
 
 # General
-train_batch_size: 450
-eval_batch_size: 450
+train_batch_size: 200
+eval_batch_size: 400

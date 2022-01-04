@@ -49,6 +49,9 @@ class Trainer(object):
         self.optimizer = self._build_optimizer()
         self.evaluator = Evaluator(config)
 
+        # pa = os.path.join(self.checkpoint_dir, 'BPJFNN-Dec-27-2021_15-42-32.pth')
+        # self.resume_checkpoint(pa)
+
     def _build_optimizer(self):
         """Init the Optimizer
 

@@ -230,6 +230,8 @@ class BPJFNNPool(PJFPool):
                         continue
                     idx = token2id[token]
                     longsent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in longsent.split(' ')])
+                    # import pdb
+                    # pdb.set_trace()
                     id2longsent[idx] = F.pad(longsent, (0, max_sent_len - longsent.shape[0]))
                     id2longsent_len[idx] = min(max_sent_len, longsent.shape[0])
                     
@@ -403,6 +405,9 @@ class IPJFPool(PJFNNPool):
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
 
+class PJFFFPool(BERTPool):
+    def __init__(self, config):
+        super(PJFFFPool, self).__init__(config)
 
 
 

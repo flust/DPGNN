@@ -79,4 +79,7 @@ class BPJFNN(PJFModel):
                 + self.loss(output_neg_1, label_neg) \
 
     def predict(self, interaction):
-        return self.sigmoid(self.forward(interaction))
+        # import pdb
+        # pdb.set_trace()
+        score = self.forward(interaction)
+        return self.sigmoid(score)

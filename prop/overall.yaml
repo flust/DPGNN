@@ -6,7 +6,7 @@ gpu_id: 0
 learner: Adam
 epochs: 3000 # 300
 eval_step: 1
-stopping_step: 10
+stopping_step: 5
 clip_grad_norm: ~
 
 # Evaluation

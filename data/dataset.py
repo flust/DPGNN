@@ -206,7 +206,7 @@ class BPJFNNDataset(PJFDataset):
         self.pool = pool
 
     def _init_attributes(self, pool):
-        super(BPJFNNDataset, self)._init_attributes(pool)
+        super()._init_attributes(pool)
         self.geek_id2longsent = pool.geek_id2longsent
         self.geek_id2longsent_len = pool.geek_id2longsent_len
         self.job_id2longsent = pool.job_id2longsent
@@ -352,7 +352,61 @@ class BERTDataset(MFDataset):
     def __init__(self, config, pool, phase):
         super(BERTDataset, self).__init__(config, pool, phase)
 
+class PJFFFDataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(PJFFFDataset, self).__init__(config, pool, phase)
+        self.max_len = 100
 
+    def __getitem__(self, index):
+        geek_id = self.geek_ids[index].item()
+        job_id = self.job_ids[index].item()
+        neg_geek = random.randint(1, self.geek_num - 1)
+        neg_job = random.randint(1, self.job_num - 1)
+
+        while neg_job in self.pool.geek2jobs[geek_id]:
+            neg_job = random.randint(1, self.job_num - 1)
+        while neg_geek in self.pool.job2geeks[job_id]:
+            neg_geek = random.randint(1, self.geek_num - 1)
+        
+        if geek_id not in self.pool.geek2jobs.keys():
+            self.pool.geek2jobs[geek_id] = [0]
+        if job_id not in self.pool.job2geeks.keys():
+            self.pool.job2geeks[job_id] = [0]
+
+        his_geek_len = min(self.max_len, len(self.pool.job2geeks[job_id]))
+        his_job_len = min(self.max_len, len(self.pool.geek2jobs[geek_id]))
+        neg_his_geek_len = min(self.max_len, len(self.pool.job2geeks[neg_job]))
+        # print(job_id.item())
+        # print(geek_id.item())
+        # print(len(self.pool.job2geeks[job_id]))
+        # print(len(self.pool.geek2jobs[geek_id]))
+
+        # print("********************")
+        # print(torch.Tensor(self.pool.job2geeks[job_id]))
+        # print(self.max_len - his_geek_len)
+
+        his_geek = F.pad(torch.Tensor(self.pool.job2geeks[job_id])[:his_geek_len], (0, self.max_len - his_geek_len))
+        his_job = F.pad(torch.Tensor(self.pool.geek2jobs[geek_id])[:his_job_len], (0, self.max_len - his_job_len))
+        neg_his_geek = F.pad(torch.Tensor(self.pool.job2geeks[neg_job])[:neg_his_geek_len], (0, self.max_len - neg_his_geek_len))
+
+        # print(his_geek)
+        # print(his_job)
+        # print(neg_his_geek)
+
+        return {
+            'geek_id': self.geek_ids[index],
+            'job_id': self.job_ids[index],
+            'neg_job': neg_job,
+            'his_geek': his_geek,
+            'his_geek_len': his_geek_len,
+            'his_job': his_job,
+            'his_job_len': his_job_len, 
+            'neg_his_geek': neg_his_geek,
+            'neg_his_geek_len': neg_his_geek_len,
+            'label_pos': torch.Tensor([1]),
+            'label_neg': torch.Tensor([0]),
+            'label': self.labels[index]
+        }
 
 
 

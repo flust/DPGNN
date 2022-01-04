@@ -99,6 +99,7 @@ class GeekLayer(nn.Module):
 class APJFNN(PJFModel):
     def __init__(self, config, pool):
         super(APJFNN, self).__init__(config, pool)
+        self.config = config
         self.embedding_size = config['embedding_size']
 
         self.emb = nn.Embedding(pool.wd_num, self.embedding_size, padding_idx=0)

@@ -15,6 +15,7 @@ from model.LightGCNal import LightGCNal
 from model.MultiGCNsl import MultiGCNsl
 from model.MultiGCNsl1 import MultiGCNsl1
 from model.MultiGCNsl1l2 import MultiGCNsl1l2
+from model.PJFFF import PJFFF
 from model.BGPJF import BGPJF
 from model.woBG import woBG
 from model.woBL import woBL
