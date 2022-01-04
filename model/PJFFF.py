@@ -129,10 +129,9 @@ class PJFFF(PJFModel):
 
     def predict(self, interaction):
         score_E = self.forward_E(interaction)
-        score_E = self.sigmoid(score_E)
         f_i, g_i, _ = self.forward_I(interaction)
         score_I = torch.mul(f_i, g_i).sum(dim=1)
-        return score_E + score_I
+        return self.sigmoid(score_E + score_I)
         
 
 
