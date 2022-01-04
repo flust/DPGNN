@@ -24,8 +24,6 @@ class PJFFF(PJFModel):
         self.bert_lr = nn.Linear(config['BERT_embedding_size'],
                                     self.embedding_size).to(self.config['device'])
         self._load_bert()
-        # self.geek_emb = nn.Embedding(self.n_users, self.embedding_size)
-        # self.job_emb = nn.Embedding(self.n_items, self.embedding_size)
 
         self.job_biLSTM = nn.LSTM(
             input_size=2 * self.embedding_size,
@@ -76,11 +74,8 @@ class PJFFF(PJFModel):
             job_id = interaction['neg_job']
         else:
             job_id = interaction['job_id']
-
         f_e = self.bert_lr(self.bert_user[geek_id])
         g_e = self.bert_lr(self.bert_job[job_id])
-        # f_e = self.geek_emb(geek_id)
-        # g_e = self.job_emb(job_id)
         return f_e, g_e
 
     def forward_E(self, interaction, neg=False):
@@ -91,11 +86,11 @@ class PJFFF(PJFModel):
     def forward_I(self, interaction):
         f_e, g_e = self.get_fg_E(interaction)
         his_job = interaction['his_job'].long()
-        his_job_len = interaction['his_job_len']
+        # his_job_len = interaction['his_job_len']
         his_geek = interaction['his_geek'].long()
-        his_geek_len = interaction['his_geek_len']
+        # his_geek_len = interaction['his_geek_len']
         neg_his_geek = interaction['neg_his_geek'].long()
-        neg_his_geek_len = interaction['neg_his_geek_len']
+        # neg_his_geek_len = interaction['neg_his_geek_len']
 
         his_f_e = self.bert_lr(self.bert_user[his_geek]) # [2048, 100, 32]
         his_g_e = self.bert_lr(self.bert_job[his_job]) # [2048, 100, 32]
@@ -137,8 +132,6 @@ class PJFFF(PJFModel):
         score_E = self.sigmoid(score_E)
         f_i, g_i, _ = self.forward_I(interaction)
         score_I = torch.mul(f_i, g_i).sum(dim=1)
-        # import pdb
-        # pdb.set_trace()
         return score_E + score_I
         
 
