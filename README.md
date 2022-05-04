@@ -1,7 +1,7 @@
 # DPGNN
 Codes of Modeling Two-Way Selection Preference for Person-Job Fit
 
-<!-- ## Dataset
+## Dataset
 
 `dataset_path` in `prop/overall.yaml` should contain the following files:
 
@@ -79,4 +79,4 @@ python eval.py [-h] [--file FILE] [--phase PHASE] [--save]
 Arguments:
 * `--file FILE`, `-f FILE`  Model file to test.
 * `--phase PHASE`, `-p PHASE` Which phase to evaluate. `PHASE` should be one of `train`, `valid_g`, `valid_j`, `test_g` and `test_j`. Defaults to `test_g`.
-* `--save`, `-s` Whether to save predict score. Defaults to not saving. -->
+* `--save`, `-s` Whether to save predict score. Defaults to not saving.
