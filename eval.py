@@ -11,7 +11,7 @@ from utils import init_seed, init_logger, dynamic_load
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', '-f', type=str, help='Model file to test.')
-    parser.add_argument('--phase', '-p', type=str, default='test', help='Which phase to evaluate.')
+    parser.add_argument('--phase', '-p', type=str, default='test_g', help='Which phase to evaluate.')
     parser.add_argument('--group', '-g', type=str, default='all', help='Which group to evaluate.')
     parser.add_argument('--save', '-s', action='store_true', help='Whether to save predict score.')
 
@@ -20,11 +20,11 @@ def get_arguments():
 
 
 def eval_preparation(resume_file, phase='test'):
-    assert phase in ['train', 'test', 'valid']
+    assert phase in ['train', 'test_g', 'test_j', 'valid_g', 'valid_j']
     checkpoint = torch.load(resume_file)
 
     config = checkpoint['config']
-    config.params['dataset_path'] = './dataset/bosszp0203/'
+    config.params['dataset_path'] = '/home/yangchen/BGPJF/data/four_month_5_core/final_dir'
     init_seed(config['seed'], config['reproducibility'])
 
     # logger initialization

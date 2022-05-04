@@ -18,7 +18,7 @@ params_range['MF'] = {
 }
 
 params_range['NCF'] = {
-    'embedding_size': [128],  # NCF embedding_size 减半，因为 user/item 都有两个 embedding
+    'embedding_size': [128],  
     'mlp_hidden_size': [[64], [64, 32], [64, 32, 16]],
     'learning_rate': [0.001, 0.0001],
 }
@@ -29,38 +29,38 @@ params_range['LightGCN'] = {
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
-params_range['LightGCNa'] = {   # 增加了开聊建边的 LightGCN
+params_range['LightGCNa'] = {  
     'embedding_size': [128],
     'n_layers': [2, 3],
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
-params_range['LightGCNb'] = {   # 拆点的 LightGCN
-    'embedding_size': [64],  # 因为拆点,embedding_size 减半，同NCF
+params_range['LightGCNb'] = {  
+    'embedding_size': [64],  
     'n_layers': [2, 3],
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
 params_range['MultiGCN'] = {
-    'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    'embedding_size': [64],  
     'n_layers': [2, 3],
     'learning_rate': [0.001, 0.0001],
 }
 
 params_range['MultiGCNs'] = {
-    'embedding_size': [128],   # 因为拆点,embedding_size 减半
+    'embedding_size': [128], 
     'n_layers': [3],
     'learning_rate': [0.001],
 }
 
-params_range['LightGCNal'] = {   # 增加了开聊建边的 LightGCN
+params_range['LightGCNal'] = { 
     'embedding_size': [128],
     'n_layers': [2, 3],
     'learning_rate': [0.001, 0.0001],
 }
 
 params_range['MultiGCNsl'] = {
-    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    # 'embedding_size': [64], 
     'embedding_size': [128],
     'n_layers': [3],
     'omega': [10, 0.1],
@@ -68,14 +68,14 @@ params_range['MultiGCNsl'] = {
 }
 
 params_range['MultiGCNsl1'] = {
-    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    # 'embedding_size': [64],
     'embedding_size': [128],
     'n_layers': [3],
     'learning_rate': [0.001],
 }
 
 params_range['MultiGCNsl1l2'] = {
-    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    # 'embedding_size': [64], 
     'embedding_size': [128],
     'mutual_weight': [0.1, 0.01],
     'temperature': [0.1, 0.05],
@@ -84,11 +84,16 @@ params_range['MultiGCNsl1l2'] = {
 }
 
 params_range['BGPJF'] = {
-    # 'embedding_size': [64],   # 因为拆点,embedding_size 减半
+    # 'embedding_size': [64], 
     'embedding_size': [128],
     'mutual_weight': [0.05],
     'temperature': [0.3, 0.2, 0.1],
     'n_layers': [3],
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
+
+params_range['LFRR'] = {
+    'embedding_size': [64, 128],
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
@@ -104,6 +109,9 @@ params_range['IPJF'] = {
     'learning_rate': [0.001, 0.0001, 0.00001],
 }
 
+params_range['PJFFF'] = {
+    'learning_rate': [0.001, 0.0001, 0.00001],
+}
 
 def get_arguments():
     args = dict()

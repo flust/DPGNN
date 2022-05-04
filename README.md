@@ -1,5 +1,5 @@
-# BGPJF
-Codes of Person-Job Fit with model Bilateral Graph Neural Network
+# DPGNN
+Codes of Modeling Two-Way Selection Preference for Person-Job Fit
 
 <!-- ## Dataset
 
@@ -7,24 +7,28 @@ Codes of Person-Job Fit with model Bilateral Graph Neural Network
 
 ```
 dataset_path/
-├── data.{train/valid/test}[.{bert/his_len/job_his/qlen_his/qwd_his}.npy]
-├── data.search.{train/valid/test}
-├── {geek/job}.{token/sent/longsent/desc}
-├── job.search.bert.npy
-├── job.search.token
-├── word.cnt
-└── word.search.id
+├── data.{train/valid_g/valid_j/test_g/test_j/user_add/job_add}[.{bert.npy]
+├── {geek/job}.{token/sent/longsent}
+└── word.cnt
 ```
 
 ## Baseline & Method
 
 ### Pop
 
-Scores are calculated by jobs' popularity.
+Scores are calculated by users'popularity and jobs' popularity.
 
 ### MF
 
 Traditional MF Model.
+
+### LightGCN
+
+> LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
+
+### LFRR
+
+> Neve et.al. Latent factor models and aggregation operators for collaborative filtering in reciprocal recommender systems
 
 ### PJFNN
 
@@ -42,19 +46,13 @@ RNN-based Person-Job Fit Model.
 
 Fine-tuned BERT + MLP
 
-### VPJF8
+### IPJF
 
-* Text Matching: BERT + Linear
-* Intent Modeling:
-    * l_add history (64) + Pos Enc
-    * Text-based Attn
-        * Q: job desc emb self attention
-        * K: qwd emb pooling
-        * V: job seq
-    * Job ID Attn
-        * Q: job ID emb
-        * K/V: job seq
-* User Modeling
+> RanLe et.al. Towards Effective and Interpretable Person-Job Fitting
+
+### PJFFF
+
+> Jiang et.al. Learning Effective Representations for Person-Job Fit by Feature Fusion
 
 ## Usage
 
@@ -80,6 +78,5 @@ python eval.py [-h] [--file FILE] [--phase PHASE] [--save]
 
 Arguments:
 * `--file FILE`, `-f FILE`  Model file to test.
-* `--phase PHASE`, `-p PHASE` Which phase to evaluate. `PHASE` should be one of `train`, `valid` and `test`. Defaults to `test`.
-* `--group GROUP`, `-g GROUP` Which group to evaluate. `GROUP` should be one of `all`, `weak` and `skilled`. Defaults to `all`.
+* `--phase PHASE`, `-p PHASE` Which phase to evaluate. `PHASE` should be one of `train`, `valid_g`, `valid_j`, `test_g` and `test_j`. Defaults to `test_g`.
 * `--save`, `-s` Whether to save predict score. Defaults to not saving. -->

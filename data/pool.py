@@ -63,8 +63,13 @@ class PopPool(PJFPool):
 class MFPool(PJFPool):
     def __init__(self, config):
         super(MFPool, self).__init__(config)
-            
 
+
+class LFRRPool(MFPool):
+    def __init__(self, config):
+        super(LFRRPool, self).__init__(config)
+            
+       
 class NCFPool(MFPool):
     def __init__(self, config):
         super(NCFPool, self).__init__(config)
@@ -111,44 +116,9 @@ class LightGCNaPool(LightGCNPool):
         self.job_add_matrix = self._load_edge(job_add_file)
 
 
-class LightGCNbPool(LightGCNPool):
+class DPGNNPool(LightGCNaPool):
     def __init__(self, config):
-        super(LightGCNbPool, self).__init__(config)
-
-
-class MultiGCNPool(LightGCNaPool):
-    def __init__(self, config):
-        super(MultiGCNPool, self).__init__(config)
-
-
-class MultiGCNsPool(LightGCNaPool):
-    def __init__(self, config):
-        super(MultiGCNsPool, self).__init__(config)
-
-
-class LightGCNalPool(LightGCNaPool):
-    def __init__(self, config):
-        super(LightGCNalPool, self).__init__(config)
-
-
-class MultiGCNslPool(LightGCNaPool):
-    def __init__(self, config):
-        super(MultiGCNslPool, self).__init__(config)
-
-
-class MultiGCNsl1Pool(LightGCNaPool):
-    def __init__(self, config):
-        super(MultiGCNsl1Pool, self).__init__(config)
-
-
-class MultiGCNsl1l2Pool(LightGCNaPool):
-    def __init__(self, config):
-        super(MultiGCNsl1l2Pool, self).__init__(config)
-
-
-class BGPJFPool(LightGCNaPool):
-    def __init__(self, config):
-        super(BGPJFPool, self).__init__(config)
+        super(DPGNNPool, self).__init__(config)
         if(config['ADD_BERT']):
             self._load_bert()
     
@@ -178,7 +148,7 @@ class BGPJFPool(LightGCNaPool):
         self.j_bert_vec = torch.FloatTensor(j_array[:, 1:])
 
 
-class LightGCNaBERTPool(BGPJFPool):
+class LightGCNaBERTPool(DPGNNPool):
     def __init__(self, config):
         super(LightGCNaBERTPool, self).__init__(config)
 
@@ -306,10 +276,10 @@ class PJFNNPool(PJFPool):
                     sent = torch.LongTensor([self.wd2id[_] if _ in self.wd2id else 1 for _ in sent.split(' ')])
                     sents[idx][sent_num[idx]] = F.pad(sent, (0, tensor_size[1] - len(sent)))   # sents[idx] 第idx个用户的多个句子组成的 tensor 矩阵
                     sent_num[idx] += 1    # sent_num[idx] 第idx个用户的句子个数
-                    sent_num_sum += 1
+                    # sent_num_sum += 1
 
-            avg_sent_num = sent_num_sum / user_num_count   # 1.8  /  11.9
-            avg_sent_len = sent_len_sum / sent_num_sum   # 13.1  /  12.4
+            # avg_sent_num = sent_num_sum / user_num_count   # 1.8  /  11.9
+            # avg_sent_len = sent_len_sum / sent_num_sum   # 13.1  /  12.4
             # sales user 1.8 * 13.1
             # sales job 11.9 * 12.4
             # tech user 2.7 * 14.1
@@ -411,18 +381,18 @@ class PJFFFPool(BERTPool):
 
 
 
-class woBGPool(BGPJFPool):
+class woBGPool(DPGNNPool):
     def __init__(self, config):
         super(woBGPool, self).__init__(config)
 
-class woBLPool(BGPJFPool):
+class woBLPool(DPGNNPool):
     def __init__(self, config):
         super(woBLPool, self).__init__(config)
 
-class woMLPool(BGPJFPool):
+class woMLPool(DPGNNPool):
     def __init__(self, config):
         super(woMLPool, self).__init__(config)
 
-class woBERTPool(BGPJFPool):
+class woBERTPool(DPGNNPool):
     def __init__(self, config):
         super(woBERTPool, self).__init__(config)

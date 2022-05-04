@@ -20,22 +20,25 @@ class PJFFF(PJFModel):
 
         # layers
         self.embedding_size = config['BERT_output_size']
-        self.hd_size = self.embedding_size
         self.bert_lr = nn.Linear(config['BERT_embedding_size'],
                                     self.embedding_size).to(self.config['device'])
+
+        self.geek_emb = nn.Embedding(self.n_users, self.embedding_size)
+        self.job_emb = nn.Embedding(self.n_items, self.embedding_size)
+
         self._load_bert()
 
         self.job_biLSTM = nn.LSTM(
-            input_size=2 * self.embedding_size,
-            hidden_size=self.hd_size,
+            input_size=4 * self.embedding_size,
+            hidden_size=self.embedding_size,
             num_layers=1,
             batch_first=True,
             bidirectional=True
         )
 
         self.geek_biLSTM = nn.LSTM(
-            input_size=2 * self.embedding_size,
-            hidden_size=self.hd_size,
+            input_size=4 * self.embedding_size,
+            hidden_size=self.embedding_size,
             num_layers=1,
             batch_first=True,
             bidirectional=True
@@ -76,6 +79,9 @@ class PJFFF(PJFModel):
             job_id = interaction['job_id']
         f_e = self.bert_lr(self.bert_user[geek_id])
         g_e = self.bert_lr(self.bert_job[job_id])
+        f_e = torch.cat([f_e, self.geek_emb(geek_id)], dim=1)
+        g_e = torch.cat([g_e, self.job_emb(job_id)], dim=1)
+
         return f_e, g_e
 
     def forward_E(self, interaction, neg=False):
@@ -85,6 +91,7 @@ class PJFFF(PJFModel):
 
     def forward_I(self, interaction):
         f_e, g_e = self.get_fg_E(interaction)
+        _, neg_g_e = self.get_fg_E(interaction, neg=True)
         his_job = interaction['his_job'].long()
         # his_job_len = interaction['his_job_len']
         his_geek = interaction['his_geek'].long()
@@ -96,9 +103,15 @@ class PJFFF(PJFModel):
         his_g_e = self.bert_lr(self.bert_job[his_job]) # [2048, 100, 32]
         neg_his_f_e = self.bert_lr(self.bert_user[neg_his_geek])
 
+        # import pdb
+        # pdb.set_trace()
+        his_f_e = torch.cat([his_f_e, self.geek_emb(his_geek)], dim=2)
+        his_g_e = torch.cat([his_g_e, self.job_emb(his_job)], dim=2)
+        neg_his_f_e = torch.cat([neg_his_f_e, self.geek_emb(neg_his_geek)], dim=2)
+
         g_i = torch.cat((his_f_e, g_e.unsqueeze(1).repeat(1, his_f_e.shape[1], 1)), dim=2) # [2048, 100, 64]
         f_i = torch.cat((his_g_e, f_e.unsqueeze(1).repeat(1, his_g_e.shape[1], 1)), dim=2)
-        neg_g_i = torch.cat((neg_his_f_e, g_e.unsqueeze(1).repeat(1, neg_his_f_e.shape[1], 1)), dim=2)
+        neg_g_i = torch.cat((neg_his_f_e, neg_g_e.unsqueeze(1).repeat(1, neg_his_f_e.shape[1], 1)), dim=2)
 
         g_i, _ = self.job_biLSTM(g_i)
         g_i = torch.sum(g_i, dim=1)

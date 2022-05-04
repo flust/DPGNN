@@ -310,11 +310,9 @@ class Trainer(object):
         if not eval_data:
             return
 
-        score_file = None
         if save_score:
             model_name = self.config['model']
             tag = 'job' if reverse else 'user'
-            score_file = open(f'{model_name}.score.{tag}', 'w', encoding='utf-8')
 
         if load_best_model:
             if model_file:
@@ -344,7 +342,5 @@ class Trainer(object):
             batch_matrix_list.append(batch_matrix)
         result, result_str = self.evaluator.evaluate(batch_matrix_list, group)
 
-        if save_score:
-            score_file.close()
 
         return result, result_str

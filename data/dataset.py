@@ -140,14 +140,14 @@ class NCFDataset(MFDataset):
         super(NCFDataset, self).__init__(config, pool, phase)
 
 
+class LFRRDataset(MFDataset):
+    def __init__(self, config, pool, phase):
+        super(LFRRDataset, self).__init__(config, pool, phase)
+
+
 class LightGCNDataset(MFDataset): 
     def __init__(self, config, pool, phase):
         super(LightGCNDataset, self).__init__(config, pool, phase)
-
-
-class LightGCNaDataset(MFDataset): 
-    def __init__(self, config, pool, phase):
-        super(LightGCNaDataset, self).__init__(config, pool, phase)
 
 
 class LightGCNaBERTDataset(MFDataset): 
@@ -155,44 +155,9 @@ class LightGCNaBERTDataset(MFDataset):
         super(LightGCNaBERTDataset, self).__init__(config, pool, phase)
 
 
-class LightGCNbDataset(MFDataset): 
+class DPGNNDataset(MFDataset):
     def __init__(self, config, pool, phase):
-        super(LightGCNbDataset, self).__init__(config, pool, phase)
-
-
-class MultiGCNDataset(MFDataset):
-    def __init__(self, config, pool, phase):
-        super(MultiGCNDataset, self).__init__(config, pool, phase)
-
-
-class MultiGCNsDataset(MFDataset):
-    def __init__(self, config, pool, phase):
-        super(MultiGCNsDataset, self).__init__(config, pool, phase)
-
-
-class LightGCNalDataset(MFDataset): 
-    def __init__(self, config, pool, phase):
-        super(LightGCNalDataset, self).__init__(config, pool, phase)
-
-
-class MultiGCNslDataset(MFDataset):
-    def __init__(self, config, pool, phase):
-        super(MultiGCNslDataset, self).__init__(config, pool, phase)
-
-
-class MultiGCNsl1Dataset(MFDataset):
-    def __init__(self, config, pool, phase):
-        super(MultiGCNsl1Dataset, self).__init__(config, pool, phase)
-
-
-class MultiGCNsl1l2Dataset(MFDataset):
-    def __init__(self, config, pool, phase):
-        super(MultiGCNsl1l2Dataset, self).__init__(config, pool, phase)
-
-
-class BGPJFDataset(MFDataset):
-    def __init__(self, config, pool, phase):
-        super(BGPJFDataset, self).__init__(config, pool, phase)
+        super(DPGNNDataset, self).__init__(config, pool, phase)
 
 
 class MultiGNNDataset(MFDataset):
@@ -410,18 +375,18 @@ class PJFFFDataset(MFDataset):
 
 
 
-class woBGDataset(BGPJFDataset):
+class woBGDataset(DPGNNDataset):
     def __init__(self, config, pool, phase):
         super(woBGDataset, self).__init__(config, pool, phase)
 
-class woBLDataset(BGPJFDataset):
+class woBLDataset(DPGNNDataset):
     def __init__(self, config, pool, phase):
         super(woBLDataset, self).__init__(config, pool, phase)
 
-class woMLDataset(BGPJFDataset):
+class woMLDataset(DPGNNDataset):
     def __init__(self, config, pool, phase):
         super(woMLDataset, self).__init__(config, pool, phase)
 
-class woBERTDataset(BGPJFDataset):
+class woBERTDataset(DPGNNDataset):
     def __init__(self, config, pool, phase):
         super(woBERTDataset, self).__init__(config, pool, phase)

@@ -15,4 +15,4 @@ learning_rate: 0.0003
 
 # General
 train_batch_size: 200
-eval_batch_size: 400
+eval_batch_size: 4096
