@@ -6,7 +6,6 @@ import torch
 import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
-import wandb
 
 from utils import ensure_dir, get_local_time, dict2device
 from evaluator import Evaluator
@@ -126,7 +125,6 @@ class Trainer(object):
             dict: valid result
         """
         valid_result, valid_result_str = self.evaluate(valid_data, load_best_model=False, reverse=reverse)
-        wandb.log(valid_result)
         valid_score = valid_result[self.valid_metric]
         return valid_score, valid_result, valid_result_str
 

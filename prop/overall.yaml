@@ -19,9 +19,7 @@ pin_memory: True
 
 # General
 checkpoint_dir: ./saved/
-dataset_path: ./../data/four_month_5_core/final_dir
-# dataset_path: ./../data/sales/final_dir
-# dataset_path: ./../data/designs/final_dir
+dataset_path: ./dataset/
 
 loss_decimal_place: 4
 metric_decimal_place: 4

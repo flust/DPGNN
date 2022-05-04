@@ -9,7 +9,6 @@ from model.layer import GCNConv
 
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import degree
-import pdb
 
 
 class DPGNN(PJFModel):
@@ -165,7 +164,6 @@ class DPGNN(PJFModel):
         return ego_embeddings
 
     def info_nce_loss(self, index, is_user):
-        # pdb.set_trace
         all_embeddings = self.get_ego_embeddings()
         user_e_a, item_e_p, user_e_p, item_e_a = torch.split(all_embeddings, 
                     [self.n_users, self.n_items, self.n_users, self.n_items])

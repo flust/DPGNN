@@ -1,5 +1,4 @@
 from logging import getLogger
-import wandb
 import os
 import sys
 
@@ -25,7 +24,7 @@ def get_arguments():
     print(args)
     return args
 
-def main_process(model, config_dict=None, saved=True):
+def main_process(model='DPGNN', config_dict=None, saved=True):
     """Main process API for experiments of VPJF
 
     Args:
@@ -38,13 +37,6 @@ def main_process(model, config_dict=None, saved=True):
     # configurations initialization
     config = Config(model, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
-    run = wandb.init(
-        config=config.params,
-        project='vpjf-0127',
-        name=model if config['name'] is None else config['name'],
-        reinit=True,
-        mode='disabled'
-    )
 
     # logger initialization
     init_logger(config)
@@ -65,7 +57,6 @@ def main_process(model, config_dict=None, saved=True):
     # model loading and initialization
     model = dynamic_load(config, 'model')(config, pool).to(config['device'])
     logger.info(model)
-    wandb.watch(model, model.loss, log="all", log_freq=100)
 
     # trainer loading and initialization
     trainer = Trainer(config, model)
@@ -78,15 +69,11 @@ def main_process(model, config_dict=None, saved=True):
 
     # model evaluation for user
     test_result, test_result_str = trainer.evaluate(test_data_g, load_best_model=True)
-    wandb.log(test_result)
     logger.info('test for user result [all]: {}'.format(test_result_str))
 
     # model evaluation for job
     test_result, test_result_str = trainer.evaluate(test_data_j, load_best_model=True, reverse=True)
-    wandb.log(test_result)
     logger.info('test for job result [all]: {}'.format(test_result_str))
-
-    run.finish()
 
     return {
         'best_valid_score': best_valid_score,
@@ -98,4 +85,4 @@ def main_process(model, config_dict=None, saved=True):
 
 if __name__ == "__main__":
     args = get_arguments()    
-    main_process(model=args['model'], config_dict=args)
+    main_process(model='DPGNN', config_dict=args)
