@@ -31,7 +31,7 @@ dataset_path/
 ### Train
 
 ```bash
-python main.py --model MODEL --dataset DATASET
+python main.py
 ```
 
 ## Acknowledgement
