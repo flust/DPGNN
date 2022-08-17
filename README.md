@@ -7,7 +7,7 @@ This is the official PyTorch implementation for the paper:
 
 We propose a dual-perspective graph representation learning approach to model directed interactions between candidates and jobs for **person-job fit**, named Dual-Perspective Graph Neural Network (**DPGNN**).
 
-![markdown picture](./asset/model2.pdf)
+![markdown picture](./asset/model.png)
 
 ## Requirements
 
@@ -28,8 +28,6 @@ dataset_path/
 └── {geek/job}.token
 ```
 
-**Our dataset will be anonymized and released later.**
-
 ### Train
 
 ```bash
@@ -40,7 +38,7 @@ python main.py --model MODEL --dataset DATASET
 
 The implementation is based on the open-source recommendation library [RecBole](https://github.com/RUCAIBox/RecBole) and [RecBole-PJF](https://github.com/RUCAIBox/RecBole-PJF).
 
-Please cite the following papers as the references if you use our codes.
+Please consider citing the following papers as the references if you use our codes.
 
 ```
 @inproceedings{yang2022modeling,
