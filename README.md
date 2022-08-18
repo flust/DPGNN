@@ -7,7 +7,7 @@ This is the official PyTorch implementation for the paper:
 
 We propose a dual-perspective graph representation learning approach to model directed interactions between candidates and jobs for **person-job fit**, named Dual-Perspective Graph Neural Network (**DPGNN**).
 
-![markdown picture](./asset/model.png)
+![markdown picture](./asset/model.jpg)
 
 ## Requirements
 
